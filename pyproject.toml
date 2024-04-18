@@ -1,0 +1,6 @@
+[tool.poetry]
+name = "jinko-api-doc"
+version = "0.0.1"
+description = "Jinko API Documentation with Jupyter & Cookbook"
+authors = ["SSE Team <team.jinko@novadiscovery.com>"]
+readme = "README.md"
