@@ -24,6 +24,7 @@
         system:
         let
           inherit (jupyenv.lib.${system}) mkJupyterlabNew;
+          pkgs = import nixpkgs { inherit system; };
           jupyterlab = mkJupyterlabNew ({ ... }: {
             nixpkgs = inputs.nixpkgs;
             imports = [
@@ -50,6 +51,21 @@
           apps.default.program = "${jupyterlab}/bin/jupyter-lab";
           apps.default.type = "app";
           # kernel.python.aiml.enable = true;
+
+          # Add a shell with python and pip:
+          devShell = pkgs.mkShell {
+            buildInputs = [
+              # Offer python, pip and poetry 
+              # for people who want to install additional packages
+              # using there own way
+              pkgs.python3
+              pkgs.poetry
+              pkgs.python3Packages.pip
+
+              # Add jupyter notebook command line tool
+              pkgs.jupyter
+            ];
+          };
         }
       );
 }

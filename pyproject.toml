@@ -4,3 +4,9 @@ version = "0.0.1"
 description = "Jinko API Documentation with Jupyter & Cookbook"
 authors = ["SSE Team <team.jinko@novadiscovery.com>"]
 readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+numpy = "^1.26.4"
+jupyter = "^1.0.0"
