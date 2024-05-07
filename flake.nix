@@ -64,7 +64,16 @@
 
               # Add jupyter notebook command line tool
               pkgs.jupyter
+
+              # Add interactive bash to support `poetry shell`
+              pkgs.bashInteractive
+
             ];
+            shellHook = ''
+              export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
+                pkgs.stdenv.cc.cc
+              ]}
+            '';
           };
         }
       );
