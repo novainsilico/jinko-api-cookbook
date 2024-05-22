@@ -2,7 +2,7 @@
 
 (Short introduction - link to [Jinkō](https://www.jinko.ai/))
 
-- [Quick start](#) - Get up and running with the Jinkō API
+- [Tutorial](#) - Get up and running with the Jinkō API
 - [Cookbooks](#) - Interactive examples with Jupyter notebooks
 - [API References](#) - Integrate with the API through HTTP requests from any language
 - [Contribute](#) - Your contributions are welcome
