@@ -2,7 +2,7 @@
 import requests
 import getpass
 import os
-from typing import TypedDict, List, Any
+from typing import TypedDict
 
 # Helper functions (this cell could be inserted in every notebook)
 
