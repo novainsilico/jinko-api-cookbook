@@ -1,0 +1,8 @@
+# Configure you project variable 
+# by copying this file to .env.sh and replacing the xxx with your values
+#
+# We suggest that you use direnv to load this file automatically.
+
+export JINKO_API_KEY="xxx"
+export JINKO_PROJECT_ID="xxx"
+export JINKO_BASE_URL="https://api.jinko.ai"

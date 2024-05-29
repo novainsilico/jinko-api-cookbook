@@ -1,5 +1,6 @@
-/.history
 __pycache__
-.jupyter
-.ipynb_checkpoints
 .envrc
+.envrc
+.ipynb_checkpoints
+.jupyter
+/.history
