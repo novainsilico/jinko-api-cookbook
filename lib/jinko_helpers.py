@@ -102,7 +102,8 @@ def initialize(projectId: str | None = None, apiKey: str | None = None, baseUrl:
             If None, fallbacks to JINKO_API_KEY environment variable
             If environment variable is not set, you will be asked for it interactively
         baseUrl (str | None, optional): root url to reach Jinko API. Defaults to None
-            If None, fallbacks to 'https://api.jinko.ai'
+            If None, fallbacks to JINKO_BASE_URL environment variable
+            If environment variable is not set, fallbacks to 'https://api.jinko.ai'
 
     Raises:
         Exception: if API key is empty
@@ -124,6 +125,10 @@ def initialize(projectId: str | None = None, apiKey: str | None = None, baseUrl:
     global _projectId, _apiKey, _baseUrl
     if baseUrl is not None:
         _baseUrl = baseUrl
+    else:
+        baseUrlFromEnv = _os.environ.get('JINKO_BASE_URL')
+        if baseUrlFromEnv is not None and baseUrlFromEnv.strip() != '':
+            _baseUrl = baseUrlFromEnv.strip()
     if apiKey is not None:
         _apiKey = apiKey
     else:
