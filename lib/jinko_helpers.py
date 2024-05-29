@@ -32,7 +32,7 @@ def _getHeaders() -> dict[str, str]:
     }
 
 
-def _makeUrl(path: str):
+def makeUrl(path: str):
     return _baseUrl + path
 
 
@@ -80,7 +80,7 @@ def checkAuthentication() -> bool:
             print('Authentication failed')
     """
     response = _requests.get(
-        _makeUrl('/app/v1/auth/check'), headers=_getHeaders())
+        makeUrl('/app/v1/auth/check'), headers=_getHeaders())
     if response.status_code == 401:
         return False
     if response.status_code != 200:
