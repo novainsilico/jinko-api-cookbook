@@ -29,13 +29,13 @@
             nixpkgs = inputs.nixpkgs;
             imports = [
               ({ pkgs, ... }: {
-                kernel.python.scientifi = {
+                kernel.python.jinko = {
                   enable = true;
                   extraPackages = ps: [
                     ps.numpy
                     ps.scipy
                     ps.matplotlib
-                    ps.flask
+                    ps.requests
                   ];
                 };
               })
