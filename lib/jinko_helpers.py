@@ -61,7 +61,10 @@ def makeRequest(path: str, method: str = 'GET', json=None):
     response = _requests.request(
         method, _baseUrl + path, headers=_getHeaders(), json=json)
     if response.status_code != 200:
-        print(response.json())
+        if response.headers['content-type'] == 'application/json':
+          print(response.json())
+        else:
+          print("%s: %s"%(response.status_code, response.text))
         response.raise_for_status()
     return response
 
