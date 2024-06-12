@@ -22,6 +22,7 @@
 
             # Add interactive bash to support `poetry shell`
             pkgs.bashInteractive
+            pkgs.jq
           ];
         in
         {
@@ -34,6 +35,8 @@
                 export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
                   pkgs.stdenv.cc.cc
                 ]}
+                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
+                git config filter.cleanup-notebook.smudge 'cat'
               '';
             };
 
@@ -46,6 +49,8 @@
                 ]}
                 poetry install
                 poetry shell
+                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
+                git config filter.cleanup-notebook.smudge 'cat'
               '';
             };
 
@@ -58,6 +63,8 @@
                 ]}
                 poetry install
                 poetry run jupyter-lab
+                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
+                git config filter.cleanup-notebook.smudge 'cat'
               '';
             };
 
