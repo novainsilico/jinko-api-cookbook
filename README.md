@@ -44,6 +44,7 @@ To get started, follow these steps:
    - Go to the API Access tab and click on "New Token"
    - Copy `.envrc.sample` to `.envrc` and adjust the variable in it
    - Source `.envrc` (see too [direnv](https://direnv.net/))
+  
 3. **Run cookbooks**:
    - With python and poetry
      ```
@@ -52,7 +53,18 @@ To get started, follow these steps:
      jupyter-lab
      ```
    - With vscode: see [Official Jupyter integration](https://code.visualstudio.com/docs/datascience/jupyter-notebooks)
-   - With [nix](https://nixos.org): `nix run` (or `nix develop` then use poetry)
+   - With [nix](https://nixos.org):
+     ```sh
+     # Simple nix shell with core requirements (poetry)
+     nix develop
+    
+     # Open a poetry shell with installed requirements
+     nix develop .#poetry
+
+     # Open jupyter-lab
+     nix develop .#lab
+
+     ```
 
 
 ## Contributing
