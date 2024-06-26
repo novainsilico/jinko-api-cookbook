@@ -8,3 +8,4 @@ __pycache__
 **/iframe_figures
 cookbooks/outputs/*
 !cookbooks/outputs/.gitme
+cookbooks/model-lib/**

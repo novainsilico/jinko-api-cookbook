@@ -8,10 +8,12 @@ package-mode = false
 
 [tool.poetry.dependencies]
 deepdiff = "^7.0.1"
+black = {extras = ["jupyter"], version = "^24.4.2"}
 ipykernel = "^6.25.2"
 jupyter = "^1.0.0"
 jupyter-server = "^2.13.0"
 jupyterlab = "^4.0.6"
+kaleido = "0.2.1"
 matplotlib = "*"
 pandas = "^2.2.2"
 plotly = "^5.17.0"
