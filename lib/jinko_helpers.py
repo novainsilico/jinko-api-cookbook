@@ -14,7 +14,7 @@ from typing import TypedDict as _TypedDict
 
 _projectId: str | None = None
 _apiKey: str | None = None
-_baseUrl: str = 'https://api.jinko.ai'
+_baseUrl: str = "https://api.jinko.ai"
 
 
 class CoreItemId(_TypedDict):
@@ -25,18 +25,15 @@ class CoreItemId(_TypedDict):
 def _getHeaders() -> dict[str, str]:
     apiKey = _apiKey
     if apiKey is None:
-        apiKey = ''
-    return {
-        'X-jinko-project-id': _projectId,
-        'Authorization': 'ApiKey ' + apiKey
-    }
+        apiKey = ""
+    return {"X-jinko-project-id": _projectId, "Authorization": "ApiKey " + apiKey}
 
 
 def makeUrl(path: str):
     return _baseUrl + path
 
 
-def makeRequest(path: str, method: str = 'GET', json=None):
+def makeRequest(path: str, method: str = "GET", json=None):
     """Makes an HTTP request to the Jinko API.
 
     Args:
@@ -59,12 +56,13 @@ def makeRequest(path: str, method: str = 'GET', json=None):
         ).json()
     """
     response = _requests.request(
-        method, _baseUrl + path, headers=_getHeaders(), json=json)
+        method, _baseUrl + path, headers=_getHeaders(), json=json
+    )
     if response.status_code != 200:
-        if response.headers['content-type'] == 'application/json':
-          print(response.json())
+        if response.headers["content-type"] == "application/json":
+            print(response.json())
         else:
-          print("%s: %s"%(response.status_code, response.text))
+            print("%s: %s" % (response.status_code, response.text))
         response.raise_for_status()
     return response
 
@@ -82,8 +80,7 @@ def checkAuthentication() -> bool:
         if not jinko.checkAuthentication():
             print('Authentication failed')
     """
-    response = _requests.get(
-        makeUrl('/app/v1/auth/check'), headers=_getHeaders())
+    response = _requests.get(makeUrl("/app/v1/auth/check"), headers=_getHeaders())
     if response.status_code == 401:
         return False
     if response.status_code != 200:
@@ -91,10 +88,13 @@ def checkAuthentication() -> bool:
         response.raise_for_status()
     return True
 
+
 # Ask user for API key/projectId and check authentication
 
 
-def initialize(projectId: str | None = None, apiKey: str | None = None, baseUrl: str | None = None):
+def initialize(
+    projectId: str | None = None, apiKey: str | None = None, baseUrl: str | None = None
+):
     """Configures the connection to Jinko API and checks authentication
 
     Args:
@@ -129,29 +129,29 @@ def initialize(projectId: str | None = None, apiKey: str | None = None, baseUrl:
     if baseUrl is not None:
         _baseUrl = baseUrl
     else:
-        baseUrlFromEnv = _os.environ.get('JINKO_BASE_URL')
-        if baseUrlFromEnv is not None and baseUrlFromEnv.strip() != '':
+        baseUrlFromEnv = _os.environ.get("JINKO_BASE_URL")
+        if baseUrlFromEnv is not None and baseUrlFromEnv.strip() != "":
             _baseUrl = baseUrlFromEnv.strip()
     if apiKey is not None:
         _apiKey = apiKey
     else:
-        _apiKey = _os.environ.get('JINKO_API_KEY')
+        _apiKey = _os.environ.get("JINKO_API_KEY")
     if projectId is not None:
         _projectId = projectId
     else:
-        _projectId = _os.environ.get('JINKO_PROJECT_ID')
+        _projectId = _os.environ.get("JINKO_PROJECT_ID")
 
-    if _apiKey is None or _apiKey.strip() == '':
-        _apiKey = _getpass.getpass('Please enter your API key')
-    if _apiKey.strip() == '':
-        message = 'API key cannot be empty'
+    if _apiKey is None or _apiKey.strip() == "":
+        _apiKey = _getpass.getpass("Please enter your API key")
+    if _apiKey.strip() == "":
+        message = "API key cannot be empty"
         print(message)
         raise Exception(message)
 
-    if _projectId is None or _projectId.strip() == '':
-        _projectId = _getpass.getpass('Please enter your Project Id')
-    if _projectId.strip() == '':
-        message = 'Project Id cannot be empty'
+    if _projectId is None or _projectId.strip() == "":
+        _projectId = _getpass.getpass("Please enter your Project Id")
+    if _projectId.strip() == "":
+        message = "Project Id cannot be empty"
         print(message)
         raise Exception(message)
 
@@ -159,7 +159,7 @@ def initialize(projectId: str | None = None, apiKey: str | None = None, baseUrl:
         message = 'Authentication failed for Project "%s"' % (_projectId)
         print(message)
         raise Exception(message)
-    print('Authentication successful')
+    print("Authentication successful")
 
 
 def getProjectItem(shortId: str, revision: int | None = None) -> dict:
@@ -182,9 +182,11 @@ def getProjectItem(shortId: str, revision: int | None = None) -> dict:
         projectItem = jinko.getProjectItem('tr-EUsp-WjjI', 1)
     """
     if revision is None:
-        return makeRequest('/app/v1/project-item/%s' % (shortId)).json()
+        return makeRequest("/app/v1/project-item/%s" % (shortId)).json()
     else:
-        return makeRequest('/app/v1/project-item/%s?revision=%s' % (shortId, revision)).json()
+        return makeRequest(
+            "/app/v1/project-item/%s?revision=%s" % (shortId, revision)
+        ).json()
 
 
 def getCoreItemId(shortId: str, revision: int | None = None) -> CoreItemId:
@@ -207,8 +209,8 @@ def getCoreItemId(shortId: str, revision: int | None = None) -> CoreItemId:
         id = jinko.getCoreItemId('tr-EUsp-WjjI', 1)
     """
     item = getProjectItem(shortId, revision)
-    if 'coreId' not in item or item['coreId'] is None:
+    if "coreId" not in item or item["coreId"] is None:
         message = 'ProjectItem "%s" has no CoreItemId' % (shortId)
         print(message)
         raise Exception(message)
-    return item['coreId']
+    return item["coreId"]
