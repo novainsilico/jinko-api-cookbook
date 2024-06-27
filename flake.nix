@@ -29,6 +29,7 @@
             export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
               pkgs.stdenv.cc.cc
             ]}
+            export POETRY_CACHE_DIR="./.cache/pypoetry"
             git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
             git config filter.cleanup-notebook.smudge 'cat'
           '';

@@ -3,5 +3,6 @@ __pycache__
 .envrc
 .ipynb_checkpoints
 .jupyter
+.cache
 /.history
 **/iframe_figures
