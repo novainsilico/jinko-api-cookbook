@@ -23,6 +23,7 @@
             # Add interactive bash to support `poetry shell`
             pkgs.bashInteractive
             pkgs.jq
+            pkgs.nodejs
           ];
           shellInit = ''
             source .envrc 2> /dev/null || true
@@ -62,6 +63,16 @@
                 ${shellInit}
                 poetry install
                 poetry run jupyter-lab
+              '';
+            };
+
+            # Run jupyter lab in a poetry shell
+            code = pkgs.mkShell {
+              buildInputs = shellBuildInputs ++ [ pkgs.vscode ];
+              shellHook = ''
+                ${shellInit}
+                poetry install
+                poetry run ${pkgs.vscode}/bin/code .
               '';
             };
 

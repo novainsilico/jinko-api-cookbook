@@ -64,6 +64,9 @@ To get started, follow these steps:
      # Open jupyter-lab
      nix develop .#lab
 
+     # Open vscode
+     nix develop .#code
+
      ```
 
 
