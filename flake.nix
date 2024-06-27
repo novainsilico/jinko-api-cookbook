@@ -24,6 +24,13 @@
             pkgs.bashInteractive
             pkgs.jq
           ];
+          shellInit = ''
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
+              pkgs.stdenv.cc.cc
+            ]}
+            git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
+            git config filter.cleanup-notebook.smudge 'cat'
+          '';
         in
         {
           # Default shell with only poetry installed
@@ -32,11 +39,7 @@
               name = "default";
               buildInputs = shellBuildInputs;
               shellHook = ''
-                export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-                  pkgs.stdenv.cc.cc
-                ]}
-                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
-                git config filter.cleanup-notebook.smudge 'cat'
+                ${shellInit}
               '';
             };
 
@@ -44,13 +47,9 @@
             poetry = pkgs.mkShell {
               buildInputs = shellBuildInputs;
               shellHook = ''
-                export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-                  pkgs.stdenv.cc.cc
-                ]}
+                ${shellInit}
                 poetry install
                 poetry shell
-                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
-                git config filter.cleanup-notebook.smudge 'cat'
               '';
             };
 
@@ -58,13 +57,9 @@
             lab = pkgs.mkShell {
               buildInputs = shellBuildInputs;
               shellHook = ''
-                export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-                  pkgs.stdenv.cc.cc
-                ]}
+                ${shellInit}
                 poetry install
                 poetry run jupyter-lab
-                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
-                git config filter.cleanup-notebook.smudge 'cat'
               '';
             };
 
