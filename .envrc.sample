@@ -4,5 +4,5 @@
 # We suggest that you use direnv to load this file automatically.
 
 export JINKO_API_KEY="xxx"
-export JINKO_PROJECT_ID="xxx"
+export JINKO_PROJECT_ID="e0fbb5bb-8929-439a-bad6-9e12d19d9ae4"
 export JINKO_BASE_URL="https://api.jinko.ai"

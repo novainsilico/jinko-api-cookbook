@@ -23,7 +23,17 @@
             # Add interactive bash to support `poetry shell`
             pkgs.bashInteractive
             pkgs.jq
+            pkgs.nodejs
           ];
+          shellInit = ''
+            source .envrc 2> /dev/null || true
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
+              pkgs.stdenv.cc.cc
+            ]}
+            export POETRY_CACHE_DIR="./.cache/pypoetry"
+            git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
+            git config filter.cleanup-notebook.smudge 'cat'
+          '';
         in
         {
           # Default shell with only poetry installed
@@ -32,11 +42,7 @@
               name = "default";
               buildInputs = shellBuildInputs;
               shellHook = ''
-                export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-                  pkgs.stdenv.cc.cc
-                ]}
-                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
-                git config filter.cleanup-notebook.smudge 'cat'
+                ${shellInit}
               '';
             };
 
@@ -44,13 +50,9 @@
             poetry = pkgs.mkShell {
               buildInputs = shellBuildInputs;
               shellHook = ''
-                export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-                  pkgs.stdenv.cc.cc
-                ]}
+                ${shellInit}
                 poetry install
                 poetry shell
-                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
-                git config filter.cleanup-notebook.smudge 'cat'
               '';
             };
 
@@ -58,13 +60,19 @@
             lab = pkgs.mkShell {
               buildInputs = shellBuildInputs;
               shellHook = ''
-                export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
-                  pkgs.stdenv.cc.cc
-                ]}
+                ${shellInit}
                 poetry install
                 poetry run jupyter-lab
-                git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
-                git config filter.cleanup-notebook.smudge 'cat'
+              '';
+            };
+
+            # Run jupyter lab in a poetry shell
+            code = pkgs.mkShell {
+              buildInputs = shellBuildInputs ++ [ pkgs.vscode ];
+              shellHook = ''
+                ${shellInit}
+                poetry install
+                poetry run ${pkgs.vscode}/bin/code .
               '';
             };
 
