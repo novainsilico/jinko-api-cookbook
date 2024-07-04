@@ -7,8 +7,10 @@
 - make HTTP requests (jinko.makeRequest)
 """
 
+import base64 as _base64
 import requests as _requests
 import getpass as _getpass
+import json as _json
 import os as _os
 from typing import TypedDict as _TypedDict
 
@@ -22,6 +24,21 @@ class CoreItemId(_TypedDict):
     snapshotId: str
 
 
+class CustomHeadersRaw(_TypedDict):
+    name: str
+    description: str
+    folder_id: str
+    version_name: str
+
+
+_headers_map = {
+    "name": "X-jinko-project-item-name",
+    "description": "X-jinko-project-item-description",
+    "folder_id": "X-jinko-project-item-folder-ids",
+    "version_name": "X-jinko-project-item-version-name",
+}
+
+
 def _getHeaders() -> dict[str, str]:
     apiKey = _apiKey
     if apiKey is None:
@@ -29,17 +46,44 @@ def _getHeaders() -> dict[str, str]:
     return {"X-jinko-project-id": _projectId, "Authorization": "ApiKey " + apiKey}
 
 
+def encodeCustomHeaders(custom_headers_raw: CustomHeadersRaw) -> dict:
+    """Encodes and prepares custom headers for the Jinko API.
+
+    Args:
+        custom_data (dict): Dictionary containing 'description', 'folder_id', 'name', 'version_name'
+
+    Returns:
+        dict: Dictionary containing encoded and formatted headers.
+    """
+    headers = {}
+    for key, header_name in _headers_map.items():
+        if key in custom_headers_raw:
+            value = custom_headers_raw[key]
+            if key == "folder_id":
+                value = _json.dumps([{"id": value, "action": "add"}])
+            headers[header_name] = _base64.b64encode(value.encode("utf-8")).decode(
+                "utf-8"
+            )
+    return headers
+
+
 def makeUrl(path: str):
     return _baseUrl + path
 
 
-def makeRequest(path: str, method: str = "GET", json=None):
+def makeRequest(
+    path: str,
+    method: str = "GET",
+    json=None,
+    options: CustomHeadersRaw = None,
+):
     """Makes an HTTP request to the Jinko API.
 
     Args:
         path (str): HTTP path
         method (str, optional): HTTP method. Defaults to 'GET'
         json (Any, optional): JSON payload. Defaults to None
+        options (dict, optional): Additional headers to include in the request. Defaults to None
 
     Returns:
         Response: HTTP response object
@@ -55,9 +99,15 @@ def makeRequest(path: str, method: str = "GET", json=None):
             method='GET',
         ).json()
     """
-    response = _requests.request(
-        method, _baseUrl + path, headers=_getHeaders(), json=json
-    )
+    # Get the default headers from _getHeaders()
+    headers = _getHeaders()
+
+    # Encode custom headers as base64 and update the default headers
+    if options:
+        encoded_custom_headers = encodeCustomHeaders(options)
+        headers.update(encoded_custom_headers)
+
+    response = _requests.request(method, _baseUrl + path, headers=headers, json=json)
     if response.status_code != 200:
         if response.headers["content-type"] == "application/json":
             print(response.json())
