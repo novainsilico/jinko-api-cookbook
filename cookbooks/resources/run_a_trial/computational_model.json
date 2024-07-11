@@ -1,0 +1,2553 @@
+{
+    "coreVersion": "35.28.0",
+    "modelCore": {
+        "bioReactionSet": [
+            {
+                "reacRef": "",
+                "reacName": "BloodClearanceDrug",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Blood.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "kClearanceDrug"
+                                }
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "Blood.Drug"
+                                }
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "CancerCellDeathDrug",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Tumor.CancerCell",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "Tumor.CancerCell"
+                                }
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "efficacyHillFunction"
+                                }
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportBloodToTissue",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Blood.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Tissue.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Div",
+                                            {
+                                                "tag": "BinaryNode",
+                                                "contents": [
+                                                    "Times",
+                                                    {
+                                                        "tag": "Var",
+                                                        "contents": {
+                                                            "tag": "Constituent",
+                                                            "contents": "bloodFlowRate"
+                                                        }
+                                                    },
+                                                    {
+                                                        "tag": "Var",
+                                                        "contents": {
+                                                            "tag": "Constituent",
+                                                            "contents": "Blood.Drug"
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Blood"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tissue"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Plus",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tissue"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "tumorBurden"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportBloodToTumor",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Blood.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Tumor.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Div",
+                                            {
+                                                "tag": "BinaryNode",
+                                                "contents": [
+                                                    "Times",
+                                                    {
+                                                        "tag": "Var",
+                                                        "contents": {
+                                                            "tag": "Constituent",
+                                                            "contents": "bloodFlowRate"
+                                                        }
+                                                    },
+                                                    {
+                                                        "tag": "Var",
+                                                        "contents": {
+                                                            "tag": "Constituent",
+                                                            "contents": "Blood.Drug"
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Blood"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "tumorBurden"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Plus",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tissue"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "tumorBurden"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportLymphToBlood",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Lymph.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Blood.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "lymphaticFlowRate"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Lymph.Drug"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "Lymph"
+                                }
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportSubcutaneousToLymph",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "SubcutaneousInjectionSite.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Lymph.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "lymphDrainingRate"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "SubcutaneousInjectionSite.Drug"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "SubcutaneousInjectionSite"
+                                }
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportTissueToBlood",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Tissue.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Blood.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Div",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Times",
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "lymphaticFlowRate"
+                                                }
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Tissue.Drug"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tissue"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "reflectionCoefficient"
+                                }
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportTissueToLymph",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Tissue.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Lymph.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Div",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Times",
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "lymphaticFlowRate"
+                                                }
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Tissue.Drug"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tissue"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Minus",
+                                    {
+                                        "tag": "Const",
+                                        "contents": 1
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "reflectionCoefficient"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportTumorToBlood",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Tumor.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Blood.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Div",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Times",
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "lymphaticFlowRate"
+                                                }
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Tumor.Drug"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "tumorBurden"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "reflectionCoefficient"
+                                }
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TransportTumorToLymph",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [
+                        [
+                            "Tumor.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "rightSide": [
+                        [
+                            "Lymph.Drug",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Div",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Times",
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "lymphaticFlowRate"
+                                                }
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Tumor.Drug"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "tumorBurden"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Minus",
+                                    {
+                                        "tag": "Const",
+                                        "contents": 1
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "reflectionCoefficient"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            },
+            {
+                "reacRef": "",
+                "reacName": "TumorGrowth",
+                "reacNumber": "",
+                "reacDesc": "",
+                "reactives": {
+                    "leftSide": [],
+                    "rightSide": [
+                        [
+                            "Tumor.CancerCell",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    ],
+                    "staticSide": []
+                },
+                "reacKineticLaw": {
+                    "tag": "General",
+                    "symbolicRateLtR": {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "kGrowthCancerCell"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tumor.CancerCell"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Minus",
+                                    {
+                                        "tag": "Const",
+                                        "contents": 1
+                                    },
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Div",
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "Tumor.CancerCell"
+                                                }
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "kccCancerCell"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "symbolicRateRtL": {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                },
+                "tags": [],
+                "reacPhenomena": [],
+                "displayName": ""
+            }
+        ],
+        "odeSet": []
+    },
+    "modelParams": [
+        {
+            "_Iname": "administrationInterval",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 7
+            },
+            "_Iunit": "day",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ProtocolSpecific"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "bloodFlowRate",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 100
+            },
+            "_Iunit": "mL / h",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "diameterCancerCell",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 10
+            },
+            "_Iunit": "um",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "dose",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "CondNode",
+                "contents": [
+                    {
+                        "tag": "Comp",
+                        "contents": [
+                            "Equal",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "injectionCount"
+                                }
+                            },
+                            {
+                                "tag": "Const",
+                                "contents": 0
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "Var",
+                        "contents": {
+                            "tag": "Constituent",
+                            "contents": "primingDose"
+                        }
+                    },
+                    {
+                        "tag": "Var",
+                        "contents": {
+                            "tag": "Constituent",
+                            "contents": "fullDose"
+                        }
+                    }
+                ]
+            },
+            "_Iunit": "mg",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "ec50Drug",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.0005
+            },
+            "_Iunit": "mg / mL",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "efficacyHillFunction",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "BinaryNode",
+                "contents": [
+                    "Div",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "vmaxCancerCellDeath"
+                                }
+                            },
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Plus",
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Pow",
+                                    {
+                                        "tag": "BinaryNode",
+                                        "contents": [
+                                            "Div",
+                                            {
+                                                "tag": "BinaryNode",
+                                                "contents": [
+                                                    "Times",
+                                                    {
+                                                        "tag": "BinaryNode",
+                                                        "contents": [
+                                                            "Div",
+                                                            {
+                                                                "tag": "Var",
+                                                                "contents": {
+                                                                    "tag": "Constituent",
+                                                                    "contents": "ec50Drug"
+                                                                }
+                                                            },
+                                                            {
+                                                                "tag": "Var",
+                                                                "contents": {
+                                                                    "tag": "Constituent",
+                                                                    "contents": "Tumor.Drug"
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "Var",
+                                                        "contents": {
+                                                            "tag": "Constituent",
+                                                            "contents": "tumorBurden"
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "Var",
+                                                "contents": {
+                                                    "tag": "Constituent",
+                                                    "contents": "molarMassDrug"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "nHill"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "_Iunit": "1 / day",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "fullDose",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Iunit": "mg",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ProtocolSpecific"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "initialCountCancerCells",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "BinaryNode",
+                "contents": [
+                    "Times",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "initialTumorBurden"
+                                }
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "volCancerCell"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "Var",
+                        "contents": {
+                            "tag": "Unit",
+                            "contents": "substance_count"
+                        }
+                    }
+                ]
+            },
+            "_Iunit": "substance_count",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "initialTumorBurden",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 50
+            },
+            "_Iunit": "cm ** 3",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "injectionCount",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0
+            },
+            "_Iunit": "dimensionless",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Technical"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "isResponse",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "CondNode",
+                "contents": [
+                    {
+                        "tag": "Comp",
+                        "contents": [
+                            "LsT",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "tumorBurdenChangeFromBaseline"
+                                }
+                            },
+                            {
+                                "tag": "UnaryNode",
+                                "contents": [
+                                    "Neg",
+                                    {
+                                        "tag": "Const",
+                                        "contents": 70
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "Const",
+                        "contents": 1
+                    },
+                    {
+                        "tag": "Const",
+                        "contents": 0
+                    }
+                ]
+            },
+            "_Iunit": "dimensionless",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "kClearanceDrug",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.08
+            },
+            "_Iunit": "1 / h",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorUnknown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "kGrowthCancerCell",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.001
+            },
+            "_Iunit": "1 / day",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorUnknown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "kccCancerCell",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 1000000000000
+            },
+            "_Iunit": "substance_count",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorUnknown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "lymphDrainingRate",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.1
+            },
+            "_Iunit": "mL / h",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "lymphaticFlowRate",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "BinaryNode",
+                "contents": [
+                    "Times",
+                    {
+                        "tag": "Const",
+                        "contents": 0.5
+                    },
+                    {
+                        "tag": "Var",
+                        "contents": {
+                            "tag": "Constituent",
+                            "contents": "bloodFlowRate"
+                        }
+                    }
+                ]
+            },
+            "_Iunit": "mL / h",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "molarMassDrug",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 100
+            },
+            "_Iunit": "kg / mol",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "nHill",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 1.5
+            },
+            "_Iunit": "dimensionless",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "primingDose",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Iunit": "mg",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ProtocolSpecific"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "reflectionCoefficient",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.7
+            },
+            "_Iunit": "dimensionless",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "time",
+            "_Idescription": "Time parameter where Input.value t = t",
+            "_Ivalue": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "time"
+                }
+            },
+            "_Iunit": "s",
+            "_Iuri": "https://en.wikipedia.org/wiki/Time",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "Status",
+                    "value": "Reviewed"
+                },
+                {
+                    "key": "InputTag",
+                    "value": "Technical"
+                }
+            ],
+            "_IisConstant": false,
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "tumorBurden",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "BinaryNode",
+                "contents": [
+                    "Max",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "Tumor.CancerCell"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "volCancerCell"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Unit",
+                                    "contents": "substance_count"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Times",
+                            {
+                                "tag": "Const",
+                                "contents": 1e-8
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Unit",
+                                    "contents": "cm ** 3"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "_Iunit": "cm ** 3",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "tumorBurdenChangeFromBaseline",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "BinaryNode",
+                "contents": [
+                    "Times",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Minus",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "tumorBurden"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "initialTumorBurden"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "initialTumorBurden"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "Const",
+                        "contents": 100
+                    }
+                ]
+            },
+            "_Iunit": "dimensionless",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "vmaxCancerCellDeath",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.1
+            },
+            "_Iunit": "1 / day",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorUnknown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "volCancerCell",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "BinaryNode",
+                "contents": [
+                    "Times",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Div",
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Times",
+                                    {
+                                        "tag": "Const",
+                                        "contents": 3.141592653589793
+                                    },
+                                    {
+                                        "tag": "Const",
+                                        "contents": 1
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "Const",
+                                "contents": 3
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Pow",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "diameterCancerCell"
+                                }
+                            },
+                            {
+                                "tag": "Const",
+                                "contents": 3
+                            }
+                        ]
+                    }
+                ]
+            },
+            "_Iunit": "um ** 3",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        }
+    ],
+    "compartments": [
+        {
+            "_Iname": "Blood",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Iunit": "L",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "Lymph",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.3
+            },
+            "_Iunit": "L",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "SubcutaneousInjectionSite",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 10
+            },
+            "_Iunit": "mL",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorUnknown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "Tissue",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Const",
+                "contents": 0.5
+            },
+            "_Iunit": "L",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "PatientDescriptorKnown"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        },
+        {
+            "_Iname": "Tumor",
+            "_Idescription": "",
+            "_Ivalue": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "tumorBurden"
+                }
+            },
+            "_Iunit": "cm ** 3",
+            "_Iuri": "",
+            "_IcalibrationOptions": {
+                "_distribution": null,
+                "_toCalibrate": false
+            },
+            "_Itags": [
+                {
+                    "key": "InputTag",
+                    "value": "Formulaic"
+                }
+            ],
+            "_IisConstant": false,
+            "_IdisplayName": "",
+            "_Iscale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "_Itolerance": 1
+        }
+    ],
+    "inputVariables": [],
+    "species": [
+        {
+            "id": "Blood.Drug",
+            "displayName": "",
+            "reference": null,
+            "description": "",
+            "compartment": "Blood",
+            "initialCondition": {
+                "tag": "Const",
+                "contents": 0
+            },
+            "initialConditionUnit": "mg / mL",
+            "molarMass": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "molarMassDrug"
+                }
+            },
+            "scale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "tolerance": 1,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "isBoundaryCondition": false,
+            "isConstant": false,
+            "annotation": null,
+            "conversionFactor": null
+        },
+        {
+            "id": "Lymph.Drug",
+            "displayName": "",
+            "reference": null,
+            "description": "",
+            "compartment": "Lymph",
+            "initialCondition": {
+                "tag": "Const",
+                "contents": 0
+            },
+            "initialConditionUnit": "mg / mL",
+            "molarMass": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "molarMassDrug"
+                }
+            },
+            "scale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "tolerance": 1,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "isBoundaryCondition": false,
+            "isConstant": false,
+            "annotation": null,
+            "conversionFactor": null
+        },
+        {
+            "id": "SubcutaneousInjectionSite.Drug",
+            "displayName": "",
+            "reference": null,
+            "description": "",
+            "compartment": "SubcutaneousInjectionSite",
+            "initialCondition": {
+                "tag": "Const",
+                "contents": 0
+            },
+            "initialConditionUnit": "mg / mL",
+            "molarMass": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "molarMassDrug"
+                }
+            },
+            "scale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "tolerance": 1,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "isBoundaryCondition": false,
+            "isConstant": false,
+            "annotation": null,
+            "conversionFactor": null
+        },
+        {
+            "id": "Tissue.Drug",
+            "displayName": "",
+            "reference": null,
+            "description": "",
+            "compartment": "Tissue",
+            "initialCondition": {
+                "tag": "Const",
+                "contents": 0
+            },
+            "initialConditionUnit": "mg / mL",
+            "molarMass": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "molarMassDrug"
+                }
+            },
+            "scale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "tolerance": 1,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "isBoundaryCondition": false,
+            "isConstant": false,
+            "annotation": null,
+            "conversionFactor": null
+        },
+        {
+            "id": "Tumor.CancerCell",
+            "displayName": "",
+            "reference": null,
+            "description": "",
+            "compartment": "Tumor",
+            "initialCondition": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "initialCountCancerCells"
+                }
+            },
+            "initialConditionUnit": "substance_count",
+            "molarMass": null,
+            "scale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "tolerance": 1,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "isBoundaryCondition": false,
+            "isConstant": false,
+            "annotation": null,
+            "conversionFactor": null
+        },
+        {
+            "id": "Tumor.Drug",
+            "displayName": "",
+            "reference": null,
+            "description": "",
+            "compartment": "Tumor",
+            "initialCondition": {
+                "tag": "Const",
+                "contents": 0
+            },
+            "initialConditionUnit": "mg / mL",
+            "molarMass": {
+                "tag": "Var",
+                "contents": {
+                    "tag": "Constituent",
+                    "contents": "molarMassDrug"
+                }
+            },
+            "scale": {
+                "tag": "Const",
+                "contents": 1
+            },
+            "tolerance": 1,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ModelIntrinsic"
+                }
+            ],
+            "isBoundaryCondition": false,
+            "isConstant": false,
+            "annotation": null,
+            "conversionFactor": null
+        }
+    ],
+    "events": [
+        {
+            "eventTime": {
+                "occRecurrence": {
+                    "contents": {
+                        "contents": {
+                            "contents": "administrationInterval",
+                            "tag": "Constituent"
+                        },
+                        "tag": "Var"
+                    },
+                    "tag": "EquallySpacedForever"
+                },
+                "occTime": {
+                    "contents": [
+                        "Times",
+                        {
+                            "contents": 0,
+                            "tag": "Const"
+                        },
+                        {
+                            "contents": {
+                                "contents": "s",
+                                "tag": "Unit"
+                            },
+                            "tag": "Var"
+                        }
+                    ],
+                    "tag": "BinaryNode"
+                }
+            },
+            "eventUpdate": [
+                [
+                    "Blood.Drug",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Plus",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "Blood.Drug"
+                                }
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Div",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "dose"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "molarMassDrug"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "injectionCount",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Plus",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "injectionCount"
+                                }
+                            },
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    }
+                ]
+            ],
+            "eventCond": {
+                "tag": "Membership",
+                "contents": {
+                    "membershipScrutinee": "administrationMode",
+                    "membershipSet": [
+                        "intravenous"
+                    ]
+                }
+            },
+            "eventName": "IvAdministration",
+            "eventRef": "",
+            "eventDesc": "",
+            "tags": [],
+            "eventStopSolver": "nostop",
+            "eventRecord": false,
+            "eventDisplay": true,
+            "displayName": "",
+            "initialValue": false,
+            "persistent": true,
+            "useValuesFromTriggerTime": false
+        },
+        {
+            "eventTime": {
+                "occRecurrence": {
+                    "contents": {
+                        "contents": {
+                            "contents": "administrationInterval",
+                            "tag": "Constituent"
+                        },
+                        "tag": "Var"
+                    },
+                    "tag": "EquallySpacedForever"
+                },
+                "occTime": {
+                    "contents": [
+                        "Times",
+                        {
+                            "contents": 0,
+                            "tag": "Const"
+                        },
+                        {
+                            "contents": {
+                                "contents": "s",
+                                "tag": "Unit"
+                            },
+                            "tag": "Var"
+                        }
+                    ],
+                    "tag": "BinaryNode"
+                }
+            },
+            "eventUpdate": [
+                [
+                    "SubcutaneousInjectionSite.Drug",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Plus",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "SubcutaneousInjectionSite.Drug"
+                                }
+                            },
+                            {
+                                "tag": "BinaryNode",
+                                "contents": [
+                                    "Div",
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "dose"
+                                        }
+                                    },
+                                    {
+                                        "tag": "Var",
+                                        "contents": {
+                                            "tag": "Constituent",
+                                            "contents": "molarMassDrug"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "injectionCount",
+                    {
+                        "tag": "BinaryNode",
+                        "contents": [
+                            "Plus",
+                            {
+                                "tag": "Var",
+                                "contents": {
+                                    "tag": "Constituent",
+                                    "contents": "injectionCount"
+                                }
+                            },
+                            {
+                                "tag": "Const",
+                                "contents": 1
+                            }
+                        ]
+                    }
+                ]
+            ],
+            "eventCond": {
+                "tag": "Membership",
+                "contents": {
+                    "membershipScrutinee": "administrationMode",
+                    "membershipSet": [
+                        "subcutaneous"
+                    ]
+                }
+            },
+            "eventName": "ScAdministration",
+            "eventRef": "",
+            "eventDesc": "",
+            "tags": [],
+            "eventStopSolver": "nostop",
+            "eventRecord": false,
+            "eventDisplay": true,
+            "displayName": "",
+            "initialValue": false,
+            "persistent": true,
+            "useValuesFromTriggerTime": false
+        }
+    ],
+    "modelName": "unnamedModel",
+    "modelStatusTag": "SelfContained",
+    "baselineChecks": [],
+    "categoricalParams": [
+        {
+            "allLevels": [
+                "intravenous",
+                "subcutaneous"
+            ],
+            "currentLevel": "intravenous",
+            "description": "",
+            "displayName": "",
+            "inputTag": null,
+            "name": "administrationMode",
+            "reference": "",
+            "status": null,
+            "tags": [
+                {
+                    "key": "InputTag",
+                    "value": "ProtocolSpecific"
+                }
+            ]
+        }
+    ],
+    "immutableIds": {
+        "0ffa0f62-a128-476f-9ac3-727b2a3242d2": "TransportSubcutaneousToLymph",
+        "12c556be-981a-41e1-9754-65d31fbc630c": "lymphaticFlowRate",
+        "204d850f-ea3e-4b55-baf4-a3e9d2588a41": "Blood.Drug",
+        "24e8af17-2356-4f9f-a8bc-6472b8169374": "Tumor.Drug",
+        "26449d2f-562b-4067-89d8-bd521f6daa72": "Tumor",
+        "2a7fb203-bf47-49f2-9ffc-fac7a97ff2a8": "Blood",
+        "2bef2223-da53-4492-b068-caf22c03f850": "ec50Drug",
+        "34d715a3-fdb0-4443-975d-e7b2b1315d8f": "initialTumorBurden",
+        "35e93935-7507-47c4-be0e-77a4e8f2e1f0": "kccCancerCell",
+        "3828e595-86ba-4a5a-b41e-823191e49c7d": "Tissue.Drug",
+        "3d63419a-0076-4e08-a88b-7214967eb0d9": "lymphDrainingRate",
+        "475e75f1-8840-40cd-861e-1b79bcd63598": "TransportTissueToBlood",
+        "542dd897-dc04-42db-adac-1946e95889e6": "Tissue",
+        "6479402e-460e-487e-84e5-7e7836d25533": "TumorGrowth",
+        "7d18ef57-8859-4bf6-80db-d71968b6e2f4": "reflectionCoefficient",
+        "822fbfb7-8a16-4c21-a783-e3d96cb6e17a": "Lymph.Drug",
+        "8523b555-8987-45dc-9928-ef23fb2c33ee": "TransportTumorToLymph",
+        "893c5114-84cd-4a5b-8eb5-90a5088ba03b": "kGrowthCancerCell",
+        "8b751d62-8921-4fbd-927b-075db296e4fd": "vmaxCancerCellDeath",
+        "93d4a583-a596-4a53-9b9b-b1c056212079": "SubcutaneousInjectionSite",
+        "97ce5872-2eb0-4867-9a06-5b793b487e28": "TransportLymphToBlood",
+        "a0c1cb48-732a-4d6b-b498-a1660d887ce9": "injectionCount",
+        "a45f4f22-fd33-4c35-bfab-38a489dcbd8d": "TransportTissueToLymph",
+        "a4f1808e-bf9a-4207-b225-b8332135c918": "time",
+        "af869cf3-35eb-4c47-a580-2137d173638c": "diameterCancerCell",
+        "b0266289-4c9a-42c3-9791-48b335e66686": "TransportBloodToTissue",
+        "b278299d-2269-4c50-bb48-f13b3204c0f9": "primingDose",
+        "ba71de23-7938-4fdb-bcd5-74859d173f2c": "CancerCellDeathDrug",
+        "bb694557-92e2-4869-844c-c0f8e2e52aa8": "IvAdministration",
+        "bd0cd8fe-3a20-4c52-ac30-e4ee0055efcf": "administrationMode",
+        "bfe10fdb-a9fb-4985-a9fd-9209e2e66b05": "isResponse",
+        "c35c4c69-e69f-49b7-b0bb-3c084b0f13f9": "Tumor.CancerCell",
+        "c68edc3c-c975-4f98-994f-16b2a6d0e64b": "molarMassDrug",
+        "c7e39f1c-5de1-4460-8500-156a30179ebc": "tumorBurden",
+        "cbed80e4-921d-4173-975e-70b32a727368": "TransportTumorToBlood",
+        "ccd49128-266a-4b65-b8ce-9d7dd1bddf2d": "BloodClearanceDrug",
+        "cec72b56-e885-4d4f-9808-f547838ebc33": "fullDose",
+        "cf4e04c2-c504-4587-9793-238efddd15fa": "efficacyHillFunction",
+        "d2097d05-a906-4aa5-83f4-6c5c51dba6d8": "TransportBloodToTumor",
+        "d36fff4a-c2ad-45cb-b508-5f4fd9e97006": "SubcutaneousInjectionSite.Drug",
+        "d57bd49e-494d-4e03-86f7-99d20221995a": "volCancerCell",
+        "dd26aa0f-a83e-4fac-96ca-cc0986528242": "bloodFlowRate",
+        "df619dd0-5bab-4da0-85fc-396b1c4bb0db": "ScAdministration",
+        "e64e92b4-8579-4367-ba87-1bbd0d84e124": "nHill",
+        "e84413ae-9f37-44d5-97d0-7818f13d1202": "tumorBurdenChangeFromBaseline",
+        "ea25fd87-9357-4d48-a9fd-fcda791365b8": "Lymph",
+        "ecdc1b73-0c0d-4ad0-83f9-ae717c0a3ff2": "initialCountCancerCells",
+        "f66066b2-d729-42fa-84be-f5b6cd7e28c4": "administrationInterval",
+        "f9e7c796-74f6-41d5-8122-31f6002fdcc4": "kClearanceDrug",
+        "fbe29b89-cfee-4cfc-bbbb-935bb0b51611": "dose"
+    },
+    "customTags": []
+}
