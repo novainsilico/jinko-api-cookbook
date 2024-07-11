@@ -12,6 +12,8 @@ import requests as _requests
 import getpass as _getpass
 import json as _json
 import os as _os
+import pandas as _pandas
+import sqlite3 as _sqlite3
 from typing import TypedDict as _TypedDict
 
 _projectId: str | None = None
@@ -108,12 +110,14 @@ def makeRequest(
         headers.update(encoded_custom_headers)
 
     response = _requests.request(method, _baseUrl + path, headers=headers, json=json)
-    if response.status_code != 200:
+    if response.status_code not in [200, 204]:
         if response.headers["content-type"] == "application/json":
             print(response.json())
         else:
             print("%s: %s" % (response.status_code, response.text))
         response.raise_for_status()
+    if response.status_code == 204:
+        return "Query successfully done, got a 204 response"
     return response
 
 
@@ -264,3 +268,93 @@ def getCoreItemId(shortId: str, revision: int | None = None) -> CoreItemId:
         print(message)
         raise Exception(message)
     return item["coreId"]
+
+
+def dataTableToSQLite(
+    data_table_file_path: str,
+):
+    """
+    Converts a CSV file to an SQLite database and encodes it in base64.
+
+    Args:
+        data_table_file_path (str): The path to the CSV file.
+
+    Returns:
+        str: The encoded SQLite database.
+
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+
+    Examples:
+        >>> datTableToSQLite('path/to/data.csv')
+        'encoded_data_table'
+    """
+    # Step 1: Convert CSV to SQLite
+
+    # Read the CSV file
+    df = _pandas.read_csv(data_table_file_path)
+    column_names = df.columns.tolist()
+
+    # Connect to SQLite database (or create it)
+    data_table_sqlite_file_path = _os.path.splitext(data_table_file_path)[0] + ".sqlite"
+    conn = _sqlite3.connect(data_table_sqlite_file_path)
+    cursor = conn.cursor()
+
+    # Write the DataFrame to the SQLite database
+    df.to_sql(
+        "data",
+        conn,
+        if_exists="replace",
+        index=False,
+        dtype={col: "TEXT" for col in df.columns},
+    )
+
+    # Create the 'data_columns' table
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS data_columns (
+        name TEXT UNIQUE,
+        realname TEXT UNIQUE
+    )
+    """
+    )
+
+    # Insert column data into 'data_columns' table
+    for name in column_names:
+        cursor.execute(
+            "INSERT OR IGNORE INTO data_columns (name, realname) VALUES (?, ?)",
+            (name, name),
+        )
+
+    # Commit changes and close the connection
+    conn.commit()
+    conn.close()
+
+    # Step 2: Encode SQLite database in base64
+    with open(data_table_sqlite_file_path, "rb") as f:
+        encoded_data_table = _base64.b64encode(f.read()).decode("utf-8")
+
+    return encoded_data_table
+
+
+def getProjectItemUrlByCoreItemId(coreItemId: str):
+    """
+    Retrieves the URL of a ProjectItem based on its CoreItemId.
+
+    Args:
+        coreItemId (str): The CoreItemId of the ProjectItem.
+
+    Returns:
+        str: The URL of the ProjectItem.
+
+    Raises:
+        requests.exceptions.RequestException: If there is an error making the request.
+
+    Examples:
+        >>> getProjectItemUrlByCoreItemId("123456789")
+        'https://jinko.ai/foo'
+    """
+    response = makeRequest("/app/v1/core-item/%s" % (coreItemId)).json()
+    sid = response.get("sid")
+    url = f"https://jinko.ai/{sid}"
+    return f"Resource link: {url}"
