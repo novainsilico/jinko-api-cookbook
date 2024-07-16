@@ -77,6 +77,7 @@ def makeRequest(
     path: str,
     method: str = "GET",
     json=None,
+    csv_data=None,
     options: CustomHeadersRaw = None,
 ):
     """Makes an HTTP request to the Jinko API.
@@ -85,6 +86,7 @@ def makeRequest(
         path (str): HTTP path
         method (str, optional): HTTP method. Defaults to 'GET'
         json (Any, optional): JSON payload. Defaults to None
+        csv_data (str, optional): CSV formatted string to be sent in the request. Defaults to None
         options (dict, optional): Additional headers to include in the request. Defaults to None
 
     Returns:
@@ -94,9 +96,9 @@ def makeRequest(
         Exception: if HTTP status code is not 200
 
     Examples:
-        response = jinko.makeRequest('/app/v1/auth/check')
+        response = makeRequest('/app/v1/auth/check')
 
-        projectItem = jinko.makeRequest(
+        projectItem = makeRequest(
             '/app/v1/project-item/tr-EUsp-WjjI',
             method='GET',
         ).json()
@@ -104,12 +106,33 @@ def makeRequest(
     # Get the default headers from _getHeaders()
     headers = _getHeaders()
 
+    # Update the headers for CSV if csv_data is provided
+    if csv_data:
+        headers["Content-Type"] = "text/csv"
+
     # Encode custom headers as base64 and update the default headers
     if options:
         encoded_custom_headers = encodeCustomHeaders(options)
         headers.update(encoded_custom_headers)
 
-    response = _requests.request(method, _baseUrl + path, headers=headers, json=json)
+    # Use the appropriate data parameter based on whether json or csv_data is provided
+    if json:
+        data = json
+        data_param = "json"
+    elif csv_data:
+        data = csv_data
+        data_param = "data"
+    else:
+        data = None
+        data_param = None
+
+    # Make the request
+    response = _requests.request(
+        method,
+        _baseUrl + path,
+        headers=headers,
+        **({data_param: data} if data_param else {}),
+    )
     if response.status_code not in [200, 204]:
         if response.headers["content-type"] == "application/json":
             print(response.json())
