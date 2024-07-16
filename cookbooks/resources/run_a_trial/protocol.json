@@ -1,0 +1,245 @@
+{
+    "coreVersion": "35.28.0",
+    "scenarioArms": [
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "iv-0.1-10",
+            "armOverrides": [
+                {
+                    "formula": "intravenous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "10",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "0.1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "sc-0.1-10",
+            "armOverrides": [
+                {
+                    "formula": "subcutaneous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "10",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "0.1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "iv-1-10",
+            "armOverrides": [
+                {
+                    "formula": "intravenous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "10",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "sc-1-10",
+            "armOverrides": [
+                {
+                    "formula": "subcutaneous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "10",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "iv-5-10",
+            "armOverrides": [
+                {
+                    "formula": "intravenous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "10",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "5",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "sc-5-10",
+            "armOverrides": [
+                {
+                    "formula": "subcutaneous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "10",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "5",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "iv-0.1-30",
+            "armOverrides": [
+                {
+                    "formula": "intravenous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "30",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "0.1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "sc-0.1-30",
+            "armOverrides": [
+                {
+                    "formula": "subcutaneous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "30",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "0.1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "iv-1-30",
+            "armOverrides": [
+                {
+                    "formula": "intravenous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "30",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "sc-1-30",
+            "armOverrides": [
+                {
+                    "formula": "subcutaneous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "30",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "1",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "iv-5-30",
+            "armOverrides": [
+                {
+                    "formula": "intravenous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "30",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "5",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        },
+        {
+            "armControl": null,
+            "armIsActive": true,
+            "armName": "sc-5-30",
+            "armOverrides": [
+                {
+                    "formula": "subcutaneous",
+                    "key": "administrationMode"
+                },
+                {
+                    "formula": "30",
+                    "key": "fullDose"
+                },
+                {
+                    "formula": "5",
+                    "key": "primingDose"
+                }
+            ],
+            "armWeight": 1
+        }
+    ]
+}
