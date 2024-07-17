@@ -367,29 +367,6 @@ def dataTableToSQLite(
     return encoded_data_table
 
 
-def getProjectItemUrlByCoreItemId(coreItemId: str):
-    """
-    Retrieves the URL of a ProjectItem based on its CoreItemId.
-
-    Args:
-        coreItemId (str): The CoreItemId of the ProjectItem.
-
-    Returns:
-        str: The URL of the ProjectItem.
-
-    Raises:
-        requests.exceptions.RequestException: If there is an error making the request.
-
-    Examples:
-        >>> getProjectItemUrlByCoreItemId("123456789")
-        'https://jinko.ai/foo'
-    """
-    response = makeRequest("/app/v1/core-item/%s" % (coreItemId)).json()
-    sid = response.get("sid")
-    url = f"https://jinko.ai/{sid}"
-    return f"Resource link: {url}"
-
-
 def getProjectItemInfoFromResponse(response: _requests.Response):
     """Retrieves the information contains in the "X-jinko-project-item"
     header of the response
@@ -417,3 +394,40 @@ def getProjectItemInfoFromResponse(response: _requests.Response):
         return None
     jsonContent = _base64.b64decode(base64Content)
     return _json.loads(jsonContent)
+
+
+def getProjectItemUrlFromSid(sid: str):
+    """
+    Retrieves the URL of a ProjectItem based on its SID.
+
+    Args:
+        sid (str): The SID of the ProjectItem.
+
+    Returns:
+        str: The URL of the ProjectItem.
+    """
+    url = f"https://jinko.ai/{sid}"
+    return url
+
+
+def getProjectItemUrlFromResponse(response: _requests.Response):
+    """
+    Retrieves the URL of a ProjectItem from an HTTP response object.
+
+    Args:
+        response (Response): HTTP response object.
+
+    Returns:
+        str: The URL of the ProjectItem.
+
+    Raises:
+        Exception: if the "X-jinko-project-item" header is not present in the response.
+    """
+    project_item_info = getProjectItemInfoFromResponse(response)
+    if project_item_info is None:
+        raise Exception(
+            "The 'X-jinko-project-item' header is not present in the response."
+        )
+    sid = project_item_info["sid"]
+    url = getProjectItemUrlFromSid(sid)
+    return url
