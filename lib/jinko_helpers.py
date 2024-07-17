@@ -33,6 +33,13 @@ class CustomHeadersRaw(_TypedDict):
     version_name: str
 
 
+class ProjectItemInfoFromResponse(_TypedDict):
+    kind: str
+    coreItemId: CoreItemId
+    sid: str
+    revision: int
+
+
 _headers_map = {
     "name": "X-jinko-project-item-name",
     "description": "X-jinko-project-item-description",
@@ -381,3 +388,32 @@ def getProjectItemUrlByCoreItemId(coreItemId: str):
     sid = response.get("sid")
     url = f"https://jinko.ai/{sid}"
     return f"Resource link: {url}"
+
+
+def getProjectItemInfoFromResponse(response: _requests.Response):
+    """Retrieves the information contains in the "X-jinko-project-item"
+    header of the response
+
+    Args:
+        response (Response): HTTP response object
+
+    Returns:
+        ProjectItemInfoFromResponse | None: project item informations or None if header does not exist
+
+    Raises:
+        Exception: if HTTP status code is not 200
+
+    Examples:
+      >>> response = jinko.makeRequest(
+      ...     path="/core/v2/model_manager/jinko_model",
+      ...     method="POST",
+      ...     json={"model": model, "solvingOptions": solving_options},
+      ... )
+      >>> jinko.getProjectItemInfoFromResponse(response)
+      {"sid": "cm-pKGA-7r3O", "kind": "ComputationalModel", "coreItemId": {"id": "be812bcc-978e-4fe1-b8af-8fb521888718", "snapshotId": "ce2b76f6-07dd-47c6-9700-c70ce44f0507"}, "revision": 5}
+    """
+    base64Content = response.headers.get("x-jinko-project-item")
+    if base64Content is None:
+        return None
+    jsonContent = _base64.b64decode(base64Content)
+    return _json.loads(jsonContent)
