@@ -6,3 +6,5 @@ __pycache__
 .cache
 /.history
 **/iframe_figures
+cookbooks/outputs/*
+!cookbooks/outputs/.gitme
