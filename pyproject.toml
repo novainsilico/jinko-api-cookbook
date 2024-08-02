@@ -21,7 +21,6 @@ python = ">=3.10"
 seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
 jinko = { git = "https://github.com/novainsilico/jinko-api-helpers-python.git" }
-black = {extras = ["jupyter"], version = "^24.4.2"}
 
 [build-system]
 requires = ["poetry-core"]
