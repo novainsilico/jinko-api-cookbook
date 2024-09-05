@@ -13,12 +13,12 @@ Find out more at [Jinko Doc](https://doc.jinko.ai)
 ## Structure
 
 - **[Quick start](#quick-start)**
-  - How to register a token
   - Cloning and installing the project
+  - How to register a token
   - Environment setup
 - **[Tutorials](/tutorial)**
   - Sequential walkthroughs of available services
-    - [01-getting-started](/tutorial/01-getting-started.ipynd): Setup and user information
+    - [01-getting-started](/tutorial/01-getting-started.ipynb): Setup and user information
     - 02-navigate: List project resources
     - 03-knowledge: Manage knowledge sources, extracts, and documents
     - 04-modeling: Create and edit a model
@@ -26,7 +26,14 @@ Find out more at [Jinko Doc](https://doc.jinko.ai)
     - 06-simulate: Run a simulation and read progress
     - 07-analysis: Retrieve and download results
 - **[Cookbooks](/cookbooks)** - Real-life examples and practical use cases
-  - [example_01](/cookbooks/example_01.ipynb) a model to start a new cookbook with.
+  - [template](/cookbooks/template.ipynb) a model to start a new cookbook with.
+  - [basic_stat_analysis](/cookbooks/basic_stat_analysis.ipynb) a cookbook to perform basic statistical analysis on trial results.
+  - [producing_data_summary](/cookbooks/producing_data_summary.ipynb) a cookbook to produce a summary table for simulated data.
+  - [quantifying_uncertainty](/cookbooks/quantifying_uncertainty.ipynb) assess the degree of uncertainty in a trial.
+  - [reviewing_model_versions](/cookbooks/reviewing_model_versions.ipynb) a cookbook to show the differences across model versions.
+  - [run_a_trial](/cookbooks/run_a_trial.ipynb) a cookbook to run a trial in jinko from scratch.
+  - [sensitivity_analysis](/cookbooks/sensitivity_analysis.ipynb) a cookbook to perform sensitivity analysis on trial results via Lasso and Random Forest.
+  - [visualizing_scalar_results](/cookbooks/visualizing_scalar_results.ipynb) a cookbook to visualize scalar results from an existing trial in jinko.
   - [visualizing_timeseries](/cookbooks/visualizing_timeseries.ipynb) the creation of a simple visualization from an existing trial in jinko. 
 
 
@@ -40,19 +47,12 @@ To get started, follow these steps:
     cd jinko-api-cookbook
     ```
 2. **Register a Token**: 
-   - Open the admin section of a project
-   - Go to the API Access tab and click on "New Token"
-   - Copy `.envrc.sample` to `.envrc` and adjust the variable in it
-   - Source `.envrc` (see too [direnv](https://direnv.net/))
+   - Open the admin section of a project and go to the API Access tab and click on "New Token" (tutorial [here](https://doc.jinko.ai/docs/quick-start))
+   - If not yet the case, setup [direnv](#how-to-install-direnv)
+   - Copy `.envrc.sample` to `.envrc` and adjust the variable in it. The project id can be found in the url (e.g. `https://jinko.ai/project/<project-id>`) 
+   - Source `.envrc` 
   
 3. **Run cookbooks**:
-   - With python and poetry
-     ```
-     poetry install
-     poetry shell
-     jupyter-lab
-     ```
-   - With vscode: see [Official Jupyter integration](https://code.visualstudio.com/docs/datascience/jupyter-notebooks)
    - With [nix](https://nixos.org):
      ```sh
      # Simple nix shell with core requirements (poetry)
@@ -63,11 +63,14 @@ To get started, follow these steps:
 
      # Open jupyter-lab
      nix develop .#lab
-
-     # Open vscode
-     nix develop .#code
-
      ```
+   - With python and poetry
+     ```
+     poetry install
+     poetry shell
+     jupyter-lab
+     ```
+   - With vscode: see [Official Jupyter integration](https://code.visualstudio.com/docs/datascience/jupyter-notebooks)
 
 
 
@@ -80,7 +83,7 @@ To maintain a high standard and ensure consistency across all cookbooks, please 
 
 ### 1. Use the basic model
 
--  Copy this basic [model](./cookbooks/basic.ipynb) to initialize a new cookbook.
+-  Copy this basic [template](./cookbooks/template.ipynb) to initialize a new cookbook.
 
 ### 2. Create an MR Per Cookbook
 
@@ -131,6 +134,50 @@ jinko.initialize(projectId, apiKey = apiKey)
 
 ```
 
+## How to install direnv?
+
+official doc https://direnv.net/
+
+### Ubuntu
+
+#### Install
+```bash
+sudo apt update
+sudo apt install direnv
+```
+
+#### Shell Configuration
+For `zsh`:
+```bash
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### NixOS
+
+#### Install
+Via `nix-env`:
+```bash
+nix-env -iA nixpkgs.direnv
+```
+
+Then run:
+```bash
+sudo nixos-rebuild switch
+```
+
+#### Shell Configuration
+For `zsh`:
+```bash
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### Usage
+To allow `.envrc` files in the directory:
+```bash
+direnv allow
+```
 
 ## License
 
