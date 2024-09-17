@@ -21,6 +21,8 @@ python = ">=3.10"
 seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
 jinko = { git = "https://github.com/novainsilico/jinko-api-helpers-python.git" }
+# when working with a jinko-api-helpers branch being developed, override this with : 
+# jinko = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "brach-name" }
 
 [build-system]
 requires = ["poetry-core"]
