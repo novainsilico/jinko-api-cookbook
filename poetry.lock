@@ -970,8 +970,8 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinko"
-version = "0.1.0"
-description = "Jinko API Documentation with Jupyter & Cookbook"
+version = "0.3.2"
+description = "A Python package containing jinko_helpers, jinko_stats, and crabbit modules aimed to be used with Jinko.ai API"
 optional = false
 python-versions = ">=3.10"
 files = []
@@ -986,7 +986,7 @@ requests = "^2.25.1"
 type = "git"
 url = "https://github.com/novainsilico/jinko-api-helpers-python.git"
 reference = "HEAD"
-resolved_reference = "0f9b7051f65897d892f2f9a4d9a2dee0811bb689"
+resolved_reference = "f6e398e9fb26324be993c248ef5e2b6ed4c8e5a9"
 
 [[package]]
 name = "joblib"
