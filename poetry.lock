@@ -970,7 +970,7 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinko"
-version = "0.3.2"
+version = "0.3.3"
 description = "A Python package containing jinko_helpers, jinko_stats, and crabbit modules aimed to be used with Jinko.ai API"
 optional = false
 python-versions = ">=3.10"
@@ -981,12 +981,13 @@ develop = false
 black = "^24.4.2"
 pandas = "^2.2.2"
 requests = "^2.25.1"
+tqdm = "^4.66.5"
 
 [package.source]
 type = "git"
 url = "https://github.com/novainsilico/jinko-api-helpers-python.git"
 reference = "HEAD"
-resolved_reference = "f6e398e9fb26324be993c248ef5e2b6ed4c8e5a9"
+resolved_reference = "a35541fc1bcc9419ba79e174ff7b7cd31002e9e1"
 
 [[package]]
 name = "joblib"
@@ -2974,6 +2975,26 @@ files = [
     {file = "tornado-6.4.1-cp38-abi3-win_amd64.whl", hash = "sha256:b24b8982ed444378d7f21d563f4180a2de31ced9d8d84443907a0a64da2072e7"},
     {file = "tornado-6.4.1.tar.gz", hash = "sha256:92d3ab53183d8c50f8204a51e6f91d18a15d5ef261e84d452800d4ff6fc504e9"},
 ]
+
+[[package]]
+name = "tqdm"
+version = "4.66.5"
+description = "Fast, Extensible Progress Meter"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tqdm-4.66.5-py3-none-any.whl", hash = "sha256:90279a3770753eafc9194a0364852159802111925aa30eb3f9d85b0e805ac7cd"},
+    {file = "tqdm-4.66.5.tar.gz", hash = "sha256:e1020aef2e5096702d8a025ac7d16b1577279c9d63f8375b63083e9a5f0fcbad"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+dev = ["pytest (>=6)", "pytest-cov", "pytest-timeout", "pytest-xdist"]
+notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
+telegram = ["requests"]
 
 [[package]]
 name = "traitlets"
