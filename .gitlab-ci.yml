@@ -1,0 +1,38 @@
+##########
+# Config #
+##########
+
+variables:
+  GIT_STRATEGY: clone
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+stages:
+  - build
+
+e2e:
+  stage: build
+  tags: [ nix ]
+  variables:
+    JK_SESSION_FILE: "/tmp/session-cookbooks"
+    JK_EMAIL: ian.bridgy@jinko.ai
+    JK_PASSWORD: password
+    JK_FINGERPRINT: 0875264d03c3df37466354bf47592a5e
+    JK_BASE_URL: "https://staging.jinko.ai/dynamic/dev-jinko/"
+    JK_HABU_GRAPHQL_URL: "https://dev-jinko.api.staging.jinko.ai/_api"
+    JK_CORE_REQ_ROOT_URL: "https://dev-jinko.api.staging.jinko.ai"
+
+    # Allow use of git+ssh with Nix and our own key
+    GIT_SSH_COMMAND: "ssh -i $JK_E2E_GIT_CLONE_SSH_KEY"
+  before_script:
+     # Key must be secure otherwise it's ignored
+    - chmod 0600 $JK_E2E_GIT_CLONE_SSH_KEY
+
+    # Need to trust Nova GitLab server
+    - mkdir -p ~/.ssh
+    - cat $NOVA_GITLAB_SERVER_HOST_KEYS >> ~/.ssh/known_hosts
+  script:
+    - nix develop .#e2e -c make test-ci

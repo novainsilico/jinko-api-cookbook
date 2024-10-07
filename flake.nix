@@ -2,10 +2,14 @@
   description = "Jinko Cookbook Documentation";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs.jinko-seeder.url = "git+ssh://git@git.novadiscovery.net/jinko/dorayaki/jinko-seeder";
+  inputs.dev-seeding.url = "git+ssh://git@git.novadiscovery.net/jinko/dorayaki/dango.git?dir=e2e/src";
   outputs =
     { self
     , flake-utils
     , nixpkgs
+    , jinko-seeder
+    , dev-seeding
     , ...
     } @ inputs:
     flake-utils.lib.eachSystem
@@ -73,6 +77,25 @@
                 ${shellInit}
                 poetry install
                 poetry run ${pkgs.vscode}/bin/code .
+              '';
+            };
+
+            # Run e2e tests
+            e2e = pkgs.mkShell {
+              buildInputs = shellBuildInputs ++ [ 
+                dev-seeding.packages.${system}.dev-seeding
+                jinko-seeder.packages.${system}.jinko-seeder
+              ];
+              shellHook = ''
+                ${shellInit}
+                poetry install
+                export jinko_seeder=${jinko-seeder}
+                source ${jinko-seeder}/jinko-seeder.bash
+                export seeding=${dev-seeding}/scripts
+                # this replaces calling poetry shell
+                VENV_PATH=$(poetry env info --path)
+                source $VENV_PATH/bin/activate
+                cd e2e
               '';
             };
 
