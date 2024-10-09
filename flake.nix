@@ -37,6 +37,7 @@
             export POETRY_CACHE_DIR="./.cache/pypoetry"
             git config filter.cleanup-notebook.clean 'scripts/cleanup-notebook.sh'
             git config filter.cleanup-notebook.smudge 'cat'
+            source .envrc
           '';
         in
         {
@@ -67,16 +68,6 @@
                 ${shellInit}
                 poetry install
                 poetry run jupyter-lab
-              '';
-            };
-
-            # Run jupyter lab in a poetry shell
-            code = pkgs.mkShell {
-              buildInputs = shellBuildInputs ++ [ pkgs.vscode ];
-              shellHook = ''
-                ${shellInit}
-                poetry install
-                poetry run ${pkgs.vscode}/bin/code .
               '';
             };
 

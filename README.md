@@ -48,7 +48,6 @@ To get started, follow these steps:
     ```
 2. **Register a Token**: 
    - Open the admin section of a project and go to the API Access tab and click on "New Token" (tutorial [here](https://doc.jinko.ai/docs/quick-start))
-   - If not yet the case, setup [direnv](#how-to-install-direnv)
    - Copy `.envrc.sample` to `.envrc` and adjust the variable in it. The project id can be found in the url (e.g. `https://jinko.ai/project/<project-id>`) 
    - Source `.envrc` 
   
@@ -132,51 +131,6 @@ projectId = None
 # It it also possible to override the base url by passing baseUrl=...
 jinko.initialize(projectId, apiKey = apiKey)
 
-```
-
-## How to install direnv?
-
-official doc https://direnv.net/
-
-### Ubuntu
-
-#### Install
-```bash
-sudo apt update
-sudo apt install direnv
-```
-
-#### Shell Configuration
-For `zsh`:
-```bash
-echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-#### NixOS
-
-#### Install
-Via `nix-env`:
-```bash
-nix-env -iA nixpkgs.direnv
-```
-
-Then run:
-```bash
-sudo nixos-rebuild switch
-```
-
-#### Shell Configuration
-For `zsh`:
-```bash
-echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-#### Usage
-To allow `.envrc` files in the directory:
-```bash
-direnv allow
 ```
 
 ## License
