@@ -17,7 +17,7 @@ kaleido = "0.2.1"
 matplotlib = "*"
 pandas = "^2.2.2"
 plotly = "^5.17.0"
-python = ">=3.10"
+python = ">=3.10,<4.0"
 seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
 jinko = { git = "https://github.com/novainsilico/jinko-api-helpers-python.git" }
@@ -25,6 +25,7 @@ jinko = { git = "https://github.com/novainsilico/jinko-api-helpers-python.git" }
 # jinko = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "branch-name" }
 scikit-survival = "^0.23.0"
 lifelines = "^0.29.0"
+cohere = "^5.11.1"
 
 [build-system]
 requires = ["poetry-core"]
