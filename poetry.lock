@@ -1299,7 +1299,7 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinko"
-version = "0.3.3"
+version = "0.3.4"
 description = "A Python package containing jinko_helpers, jinko_stats, and crabbit modules aimed to be used with Jinko.ai API"
 optional = false
 python-versions = ">=3.10"
@@ -1316,7 +1316,7 @@ tqdm = "^4.66.5"
 type = "git"
 url = "https://github.com/novainsilico/jinko-api-helpers-python.git"
 reference = "HEAD"
-resolved_reference = "8448afc934d82c77a9a270dcd35ed1abaacd2992"
+resolved_reference = "07b20918c327039fdb86287eb47fa78eb9de9497"
 
 [[package]]
 name = "joblib"
@@ -2343,9 +2343,9 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
     {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -2673,8 +2673,8 @@ files = [
 annotated-types = ">=0.6.0"
 pydantic-core = "2.23.4"
 typing-extensions = [
-    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
     {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
 ]
 
 [package.extras]
