@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "jinko-api-doc"
+name = "jinko-api-cookbook"
 version = "0.0.1"
-description = "Jinko API Documentation with Jupyter & Cookbook"
+description = "Jinko API Cookbook Repository"
 authors = ["SSE Team <team.jinko@novadiscovery.com>"]
 readme = "README.md"
 package-mode = false
@@ -20,9 +20,9 @@ plotly = "^5.17.0"
 python = ">=3.10,<4.0"
 seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
-jinko = { git = "https://github.com/novainsilico/jinko-api-helpers-python.git" }
+jinko-sdk = "^0.3.7"
 # when working with a jinko-api-helpers branch being developed, override this with : 
-# jinko = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "branch-name" }
+# jinko-sdk = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "branch-name" }
 scikit-survival = "^0.23.0"
 lifelines = "^0.29.0"
 cohere = "^5.11.1"
