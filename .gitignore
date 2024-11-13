@@ -1,6 +1,6 @@
 __pycache__
 .envrc
-.envrc
+.envrc_*
 .ipynb_checkpoints
 .jupyter
 .cache
