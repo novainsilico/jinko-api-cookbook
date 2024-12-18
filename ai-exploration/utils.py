@@ -2,6 +2,7 @@
 # Please fold this section and do not change
 import jinko_helpers as jinko
 import json
+from typing import Dict, List, Optional
 
 
 def get_trial_summary(trial_viz_sid: str) -> dict:
@@ -92,3 +93,60 @@ def print_and_save_stream(response):
             streamed_response.append(event.delta.message.content.text)
             print(event.delta.message.content.text, end="")
     return "".join(streamed_response)
+
+def run_chatbot(
+    co,
+    message: str,
+    chat_history: List[Dict[str, str]],
+    model: str = "command-r-plus-08-2024",
+    seed: Optional[int] = None,
+) -> List[Dict[str, str]]:
+    """
+    Interact with the chatbot using a given message and chat history, then return the updated chat history.
+
+    Parameters
+    ----------
+    co : object
+        The cohere client object used to interact with the chat model.
+    message : str
+        The user's message to be appended to the chat history and sent to the chatbot.
+    chat_history : list
+        A list of dictionaries representing the chat history, where each dictionary contains a role ('user' or 'assistant') and content.
+    model : str, optional
+        The model name to be used for generating responses (default is "command-r-plus-08-2024").
+    seed : Optional[int], optional
+        Seed value for deterministic response generation (default is None).
+
+    Returns
+    -------
+    List[Dict[str, str]]
+        The updated chat history including the user's message and the chatbot's response.
+    """
+    # Append the user message
+    chat_history.append({"role": "user", "content": message})
+
+    # Generate the response with the current chat history
+    response = co.chat_stream(model=model, messages=chat_history, seed=seed)
+
+    # Print the chatbot response
+    print("\nChatbot:")
+    chatbot_response = process_cohere_stream(response)
+
+    # Append the chatbot's response
+    chat_history.append(chatbot_response)
+
+    return chat_history
+
+def process_cohere_stream(response):
+    """
+    Iterate over a cohere response stream, save the content to a list, and return it as a string.
+
+    :param response: a cohere response stream
+    :return: a string of the content
+    """
+    content_list = []
+    for event in response:
+        if event.type == "content-delta":
+            content_list.append(event.delta.message.content.text)
+            print(event.delta.message.content.text, end="")
+    return {"role": "assistant", "content": "".join(content_list)}
