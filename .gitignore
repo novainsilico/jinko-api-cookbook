@@ -12,3 +12,6 @@ cookbooks/model-lib/**
 cookbooks/resources/reviewing_model_versions
 cookbooks/resources/track_model_versions
 cookbooks/resources/download_models
+cookbooks/resources/vpop_generation_with_deep_learning/outputs
+cookbooks/resources/vpop_generation_with_deep_learning/inn_models
+cookbooks/resources/vpop_generation_with_deep_learning/training_material
