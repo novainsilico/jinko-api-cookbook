@@ -26,6 +26,12 @@ jinko-sdk = ">=0.4.0,<0.5.0"
 scikit-survival = "^0.23.0"
 lifelines = "^0.29.0"
 cohere = "^5.11.1"
+unstructured = { version = "^0.16.7", markers = "python_version < '3.13'" }
+hnswlib = "^0.8.0"
+unstructured-client = "0.27.0"
+
+[tool.poetry.extras]
+ai-exploration-deps = ["unstructured"]
 
 [build-system]
 requires = ["poetry-core"]
