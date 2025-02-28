@@ -8,7 +8,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 deepdiff = "^7.0.1"
-black = {extras = ["jupyter"], version = "^24.4.2"}
+black = { extras = ["jupyter"], version = "^24.4.2" }
 ipykernel = "^6.25.2"
 jupyter = "^1.0.0"
 jupyter-server = "^2.13.0"
@@ -22,7 +22,7 @@ seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
 jinko-sdk = ">=0.4.0,<0.5.0"
 # when working with a jinko-api-helpers branch being developed, override this with : 
-#jinko-sdk = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "fix-download-model-version" }
+# jinko-sdk = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "test-minimal-poetry-file" }
 scikit-survival = "^0.23.0"
 lifelines = "^0.29.0"
 cohere = "^5.11.1"
