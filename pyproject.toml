@@ -29,6 +29,7 @@ cohere = "^5.11.1"
 unstructured = { version = "^0.16.7", markers = "python_version < '3.13'" }
 hnswlib = "^0.8.0"
 unstructured-client = "0.27.0"
+modal-python = "^0.4.2.1"
 
 [tool.poetry.extras]
 ai-exploration-deps = ["unstructured"]
