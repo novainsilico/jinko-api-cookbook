@@ -3,3 +3,4 @@ cookbooks/trial_design_optimization.ipynb -filter
 cookbooks/post_calibration_uq.ipynb -filter
 cookbooks/hessian_matrix.ipynb -filter
 cookbooks/bayesian_optimization.ipynb -filter
+cookbooks/pre_calibration_uq.ipynb -filter
