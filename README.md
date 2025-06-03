@@ -49,28 +49,15 @@ To get started, follow these steps:
 2. **Register a Token**: 
    - Open the admin section of a project and go to the API Access tab and click on "New Token" (tutorial [here](https://doc.jinko.ai/docs/quick-start))
    - Copy `.envrc.sample` to `.envrc` and adjust the variable in it. The project id can be found in the url (e.g. `https://jinko.ai/project/<project-id>`) 
-   - Source `.envrc` 
+   - `direnv allow`
   
 3. **Run cookbooks**:
-   - With [nix](https://nixos.org):
-     ```sh
-     # Simple nix shell with core requirements (poetry)
-     nix develop
-    
-     # Open a poetry shell with installed requirements
-     nix develop .#poetry
+   1. activate python with `jinko-sdk-shell`
+   2. run the cookbooks:
+     - in VS Code: run `code .`  and then select the appropriate kernel
+     - in jupyter-lab: run `jupyter-lab`
 
-     # Open jupyter-lab
-     nix develop .#lab
-     ```
-   - With python and poetry
-     ```
-     poetry install
-     poetry shell
-     jupyter-lab
-     ```
-   - With vscode: see [Official Jupyter integration](https://code.visualstudio.com/docs/datascience/jupyter-notebooks)
-
+NB: If you need to use a version of the jinko-sdk-shell still in development, instead of running `jinko-sdk-shell` you can do `nix develop git+ssh://git@git.novadiscovery.net/jinko/api/jinko-api-helpers-python?ref=<branch-name>#jinkoEnv`
 
 
 ## Contributing
