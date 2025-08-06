@@ -8,18 +8,18 @@
       },
       "locked": {
         "dir": "e2e/src",
-        "lastModified": 1741344904,
-        "narHash": "sha256-eB//m3wnVC6NUCjpMs6x62M7Xglvg/7ztaneISEsOGY=",
+        "lastModified": 1753794565,
+        "narHash": "sha256-w4EWDhG4KA07jrSwgaLugQbxG27VEzHUGAR91vt9pII=",
         "ref": "refs/heads/dev",
-        "rev": "9a5b964a1215f3f825c363e86411d62d1386c01b",
-        "revCount": 12522,
+        "rev": "0b5aecb8a3f360a9085ec20df45bd651b95d74e5",
+        "revCount": 13176,
         "type": "git",
-        "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/dango.git?dir=e2e/src"
+        "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/dango.git"
       },
       "original": {
         "dir": "e2e/src",
         "type": "git",
-        "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/dango.git?dir=e2e/src"
+        "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/dango.git"
       }
     },
     "flake-utils": {
