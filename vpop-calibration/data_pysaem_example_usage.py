@@ -17,8 +17,11 @@
 # %%
 import os, sys
 import torch
+from scipy.integrate import solve_ivp
+from multiprocessing import Pool
+import numpy as np
 from PySAEM import IndividualData, NLMEModel
-
+from pk_two_compartments_equations_with_absorption import pk_two_compartments_model
 
 # %%
 current_directory = os.getcwd()
@@ -38,7 +41,72 @@ torch.set_default_dtype(torch.float32)
 # Prepare simulated data
 # This data would normally be an experimental data set (converted to the data structure List[IndividualData] for PySAEM), from which we want to infer population parameters' distribution with PySAEM
 # To simulate a dataset with individual effects and covariates, we will repurpose the methods of PySAEM (create_design_matrix, individual_parameters) with the true values we chose earlier and add noise
-def generate_data(
+# first, let us create some structural model using an ODE solver to transform individual parameters and timesteps into outputs values
+def structural_model_brick(
+    time_steps: np.ndarray,
+    initial_conditions: np.ndarray,
+    params: np.ndarray,
+) -> torch.Tensor:
+    """
+    PK two compartments model.
+    Takes time, initial conditions and parameters
+    Returns the timeseries of the outputs according to the equations of pk_two_compartments_model: torch.Tensor[nb_outputs x nb_time_points].
+    """
+    # convert params to a tuple of parameters to pass it to solve_ivp
+    # compute time_span, required by solve_ivp
+    time_span = (time_steps[0], time_steps[-1])
+    sol = solve_ivp(
+        pk_two_compartments_model,
+        time_span,
+        initial_conditions,
+        method="LSODA",
+        t_eval=time_steps,
+        rtol=1e-6,
+        atol=1e-6,
+        args=params,
+    )
+    if not sol.success:
+        raise ValueError(f"ODE integration failed: {sol.message}")
+    return torch.Tensor(sol.y[1:])
+
+
+def structural_model(
+    list_time_steps: List[torch.Tensor],
+    list_params: List[torch.Tensor],
+) -> List[torch.Tensor]:
+    """
+    Calls structural_model_brick for each pair of (time_steps, params).
+    Returns a list of the solutions (List[torch.Tensors [nb_outputs x time_steps]]), i.e. the predicted outputs corresponding to the given time steps, initial conditions and parameters, according to the equations modeling the phenomena.
+    """
+    # extend time_steps_list if there is only one time_steps by repeating it
+    if len(list_time_steps) == 1:
+        list_time_steps = list_time_steps * len(list_params)
+
+    list_time_steps_np = [ts.detach().cpu().numpy() for ts in list_time_steps]
+    list_params_np = [p.detach().cpu().numpy() for p in list_params]
+    initial_conditions_np = np.array([10.0, 4.0, 0.0])
+
+    pool = Pool()
+    starmap_args: List[
+        Tuple[
+            np.ndarray,
+            np.ndarray,
+            np.ndarray,
+        ]
+    ] = []
+    for i in range(len(list_params)):
+        starmap_args.append(
+            (list_time_steps_np[i], initial_conditions_np, list_params_np[i])
+        )
+
+    list_sol: List[torch.Tensor] = pool.starmap(structural_model_brick, starmap_args)
+    pool.close()
+    pool.join()
+
+    return list_sol
+
+
+def generate_data_for_pySAEM(
     nb_individuals: int,
     true_MI: torch.Tensor,
     true_betas: torch.Tensor,
@@ -52,8 +120,6 @@ def generate_data(
     torch.manual_seed(32)
     list_individual_data = []
     list_individual_params = []
-
-    # get individual true parameters for each individual, via the true MIs, mus and individual effects
 
     # sample individual effects, eta_i ~ N(0, Omega)
     distrib_etas = torch.distributions.MultivariateNormal(
@@ -95,12 +161,12 @@ def generate_data(
         list_individual_params.append(true_individual_params)
         list_individual_data.append(ind_data)
 
-    # call the structural model once with all the individual parameters to optimize
-    list_true_concentrations: List[torch.Tensor] = pk_model.structural_model(
+    # call the structural model to get the predicted outputs (that will become our fake observations)
+    list_true_concentrations: List[torch.Tensor] = structural_model(
         list_time_steps, list_individual_params
     )
 
-    # reditribute the results of the structural model on the individuals, adding noise in the process
+    # redistribute the results of the structural model on the individuals, adding noise in the process
     for i in range(nb_individuals):
         # add noise
         noise: torch.Tensor = torch.normal(

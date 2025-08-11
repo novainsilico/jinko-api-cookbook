@@ -24,20 +24,20 @@ The E-step is an MCMC procedure to sample from the log-posterior of eta. There i
 There is a burn-in phase.
 
 The M-step performs the following updates using the learning rate alpha_k, equal to 1 during phase 1 then 1/iteration_in_phase_2 during phase 2.  
-
-**Update of MIs**  
+**Update of MIs**
 An optimizer L-BFGS-B is used to find the MI target. The objective function is the structural model log-likelihood of predictions made with the PDUs of the iteration and starting from the current MIs. 
 MI_new = MI_old + akpha_k * (optimizer_result)
-**Update of betas**  
+**Update of betas**
 betas_target = sum(A.inv) @ sum(B)     
 with A = X_i.T @ omega.inv @ X_i
 and B = X_i.T @ omega.inv @ X_i
 and X_i the design matrix [nb_population_params x nb_betas], each row contains [0 , 0 ... 1, cov1, cov2, 0, 0 ...], the 1 will multiply the mu_pop, and the values for the covariates will multiply the coeffs_pop.
+
 which is the normal equation for generalized least squares with theta_i = X_i @ betas_pop + etas_i.
 so betas_new = max(betas_old + alpha_k * (sum(A.inv) @ sum(B)), simulated_annealing_factor * betas_old)
-**Update of omega**  
+**Update of omega**
 omega_new = max(omega_old + alpha_k * (mean_of_the_outer_products_of_the_means_of_etas_per_individual), simulated_annealing_factor * omega_old)  this holds because the mean of etas tends to zero. applied to each diagonal element of omega.
-**Update of residual error variance**  
+**Update of residual error variance**
 var_res_new = max(sigma_res_old + sum_squared_residuals/nb_observations , simulated_annealing_factor * sigma_res_new) 
 
 The simulated annealing helps SAEM not to get stuck in a local optimum. It is only used in phase 1 (i.e. simulated_annealing_factor = 0 during phase 2).
