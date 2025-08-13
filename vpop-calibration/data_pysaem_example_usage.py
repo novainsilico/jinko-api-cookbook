@@ -54,6 +54,9 @@ def structural_model_brick(
     """
     # convert params to a tuple of parameters to pass it to solve_ivp
     # compute time_span, required by solve_ivp
+    if len(time_steps) == 1:
+        # no integration needed, return the initial conditions
+        return torch.Tensor(initial_conditions[1:].reshape(-1, 1))
     time_span = (time_steps[0], time_steps[-1])
     sol = solve_ivp(
         pk_two_compartments_model,

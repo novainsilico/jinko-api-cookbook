@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
+from pandas import to_timedelta, Timedelta
 from typing import List, Dict, Union, Callable, Optional, Tuple
 import GP
 
@@ -224,7 +225,7 @@ with torch.no_grad():
                     torch.cat(list_tensors, dim=0)
                 )
 
-                # Step 2: predict outputs with the GP
+                # Step 2: predict outputs with the GP_model
                 mean, lower, upper = self.GP_model.predict_scaled(final_input)
                 # if confidence region too big, retrain model here (to be implemented)
                 # reshape results horizontally
@@ -235,6 +236,362 @@ with torch.no_grad():
                 list_solutions: List[torch.Tensor] = list(
                     torch.split(mean, lengths, dim=1)
                 )
+                return list_solutions
+
+            self.structural_model: Callable[
+                [List[torch.Tensor], List[torch.Tensor]], List[torch.Tensor]
+            ] = structural_model
+
+    class NLMEModel_from_jinko(NLMEModel):
+        # careful, you must have a .env with the API key etc.
+        # only one arm should be active in the protocol (the first active arm found will be used)
+        def __init__(
+            self,
+            MI_names: List[str],
+            PDU_names: List[str],
+            cov_coeffs_names: List[str],
+            outputs_names: List[str],
+            folder_id: str,
+            model_sid: str,
+            model_rev: str = None,
+            protocol_sid: str = None,
+            protocol_rev: str = None,
+            time_steps_unit: str = "s",
+            error_model_type: str = "additive",  # the only one implemented for now
+            covariate_map: Optional[Dict[str, List[str]]] = None,
+        ):
+            super().__init__(
+                MI_names,
+                PDU_names,
+                cov_coeffs_names,
+                outputs_names,
+                error_model_type,
+                covariate_map,
+            )
+            self.time_steps_unit = time_steps_unit
+            # jinko set-up
+            import os
+            from datetime import datetime
+            import uuid
+            import io
+            import zipfile
+            import jinko_helpers as jinko
+            from pandas import read_csv
+
+            jinko.initialize()
+            resources_dir = os.path.normpath("resources/download_models")
+            if not os.path.exists(resources_dir):
+                os.makedirs(resources_dir)
+            # TO DO : look up for eventual errors
+            model_project_item = jinko.get_project_item(
+                sid=model_sid, revision=model_rev
+            )
+            self.model_core_item_id = model_project_item["coreId"]["id"]
+            self.model_snapshot_id = model_project_item["coreId"]["snapshotId"]
+            self.trial_core_item_id = None
+            self.trial_snapshot_id = None
+            if protocol_sid is not None:
+                protocol_project_item = jinko.get_project_item(
+                    sid=protocol_sid, revision=protocol_rev
+                )
+                self.protocol_core_item_id = protocol_project_item["coreId"]["id"]
+                self.protocol_snapshot_id = protocol_project_item["coreId"][
+                    "snapshotId"
+                ]
+                response = jinko.make_request(
+                    path=f"/core/v2/scenario_manager/protocol_design/{self.protocol_core_item_id}/snapshots/{self.protocol_snapshot_id}",
+                ).json()
+                for arm in response["scenarioArms"]:
+                    if arm["armIsActive"] == True:
+                        arm_name = arm["armName"]
+            else:
+                self.protocol_core_item_id = None
+                self.protocol_snapshot_id = None
+                arm_name = "identity"
+
+            # retrieve model name and date to later name items
+            self.model_name = jinko.make_request(
+                path=f"/core/v2/model_manager/jinko_model/{self.model_core_item_id}/snapshots/{self.model_snapshot_id}/model",
+            ).json()["modelName"]
+            self.date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+            # create measure design
+            outputs_dict = [
+                {"timeseriesId": output_name} for output_name in self.outputs_names
+            ]
+            response = jinko.make_request(
+                path="/core/v2/scorings_manager/measure_design",
+                method="POST",
+                json={
+                    "computationalModelId": {
+                        "coreItemId": self.model_core_item_id,
+                        "snapshotId": self.model_snapshot_id,
+                    },
+                    "measures": outputs_dict,
+                },
+                options={
+                    "name": "measure design created by PySAEM",
+                    "folder_id": folder_id,
+                },
+            )
+            measure_design_info = jinko.get_project_item_info_from_response(response)
+            self.measure_design_core_item_id = measure_design_info["coreItemId"]["id"]
+            self.measure_design_snapshot_id = measure_design_info["coreItemId"][
+                "snapshotId"
+            ]
+
+            # method to transform parameters set into vpop patients
+            def to_patient(x):
+                return {
+                    "patientIndex": str(uuid.uuid4()),
+                    "patientCategoricalAttributes": [],
+                    "patientAttributes": [
+                        {"id": p, "val": x[j].item()}
+                        for j, p in enumerate(self.MI_names + self.PDU_names)
+                    ],
+                }
+
+            self.to_patient = to_patient
+
+            def structural_model(
+                list_time_steps: List[torch.Tensor], list_params: List[torch.Tensor]
+            ) -> List[torch.Tensor]:
+
+                # translate times into API compliant jsons
+                if len(list_time_steps) == 0 or len(list_params) == 0:
+                    raise ValueError("Structural model received an empty list.")
+                if len(list_time_steps) == 1 and len(list_params) > 1:
+                    # Repeat the single tensor if necessary
+                    concatenated_times = torch.cat(
+                        [list_time_steps[0]] * len(list_params)
+                    )
+                else:
+                    # Concatenate all tensors in the list
+                    concatenated_times = torch.cat(list_time_steps)
+                time_steps = torch.unique(concatenated_times, sorted=True)
+                solving_times: List[Dict[str, str]] = []
+                start_time_value = time_steps[0].item()
+                start_time_iso = Timedelta.isoformat(
+                    to_timedelta(start_time_value, unit=self.time_steps_unit)
+                )
+                if time_steps.numel() == 1:  # only one time point
+                    solving_times.append(
+                        {
+                            "tMax": start_time_iso,
+                            "tMin": start_time_iso,
+                            "tStep": f"PT0S",
+                        }
+                    )
+                else:
+                    # give the first period that is the global period (encompasses all the others)
+                    solving_times.append(
+                        {
+                            "tMax": Timedelta.isoformat(
+                                to_timedelta(
+                                    time_steps[-1].item(), unit=self.time_steps_unit
+                                )
+                            ),
+                            "tMin": Timedelta.isoformat(
+                                to_timedelta(
+                                    time_steps[0].item(), unit=self.time_steps_unit
+                                )
+                            ),
+                            "tStep": Timedelta.isoformat(
+                                to_timedelta(
+                                    (time_steps[-1].item() - time_steps[0].item()),
+                                    unit=self.time_steps_unit,
+                                )
+                            ),
+                        }
+                    )
+                step_value = (time_steps[1] - time_steps[0]).item()
+                current_step_value = step_value
+
+                for i in range(1, time_steps.numel()):
+                    next_step_value = (time_steps[i] - time_steps[i - 1]).item()
+
+                    # check if the step has changed using float values
+                    if abs(next_step_value - current_step_value) > 1e-9:
+                        # the step is not regular; close the previous period and start a new one
+                        end_time_iso = Timedelta.isoformat(
+                            to_timedelta(
+                                time_steps[i - 1].item(), unit=self.time_steps_unit
+                            )
+                        )
+                        start_time_iso = Timedelta.isoformat(
+                            to_timedelta(start_time_value, unit=self.time_steps_unit)
+                        )
+                        current_step_iso = Timedelta.isoformat(
+                            to_timedelta(current_step_value, unit=self.time_steps_unit)
+                        )
+
+                        solving_times.append(
+                            {
+                                "tMax": end_time_iso,
+                                "tMin": start_time_iso,
+                                "tStep": current_step_iso,
+                            }
+                        )
+
+                        # start a new period
+                        start_time_value = time_steps[i - 1].item()
+                        current_step_value = next_step_value
+
+                # Add the final period
+                end_time_iso = Timedelta.isoformat(
+                    to_timedelta(time_steps[-1].item(), unit=self.time_steps_unit)
+                )
+                start_time_iso = Timedelta.isoformat(
+                    to_timedelta(start_time_value, unit=self.time_steps_unit)
+                )
+                current_step_iso = Timedelta.isoformat(
+                    to_timedelta(current_step_value, unit=self.time_steps_unit)
+                )
+
+                solving_times.append(
+                    {
+                        "tMax": end_time_iso,
+                        "tMin": start_time_iso,
+                        "tStep": current_step_iso,
+                    }
+                )
+
+                # creating and posting the vpop with the given sets of parameters
+                vpop = {"patients": [to_patient(x) for x in list_params]}
+                response = jinko.make_request(
+                    path="/core/v2/vpop_manager/vpop",
+                    method="POST",
+                    json=vpop,
+                    options={
+                        "folder_id": folder_id,
+                        "name": "Vpop created by PySAEM",
+                    },
+                )
+                vpop_info = jinko.get_project_item_info_from_response(response)
+                vpop_core_item_id = vpop_info["coreItemId"]["id"]
+                vpop_snapshot_id = vpop_info["coreItemId"]["snapshotId"]
+
+                # upload the trial
+                protocol_dict = (
+                    None
+                    if (
+                        (self.protocol_core_item_id is None)
+                        or (self.protocol_snapshot_id is None)
+                    )
+                    else {
+                        "coreItemId": self.protocol_core_item_id,
+                        "snapshotId": self.protocol_snapshot_id,
+                    }
+                )
+                if self.trial_core_item_id == None:  # create the trial the first time
+                    response = jinko.make_request(
+                        path="/core/v2/trial_manager/trial",
+                        method="POST",
+                        json={
+                            "computationalModelId": {
+                                "coreItemId": self.model_core_item_id,
+                                "snapshotId": self.model_snapshot_id,
+                            },
+                            "protocolDesignId": protocol_dict,
+                            "vpopId": {
+                                "coreItemId": vpop_core_item_id,
+                                "snapshotId": vpop_snapshot_id,
+                            },
+                            "measureDesignId": {
+                                "coreItemId": self.measure_design_core_item_id,
+                                "snapshotId": self.measure_design_snapshot_id,
+                            },
+                            "solvingOptions": {
+                                "solvingTimes": solving_times,
+                            },
+                        },
+                        options={
+                            "folder_id": folder_id,
+                            "name": "Trial created by pySAEM",
+                        },
+                    )
+                    trial_info = jinko.get_project_item_info_from_response(response)
+                    self.trial_core_item_id: str = trial_info["coreItemId"]["id"]
+                    self.trial_snapshot_id: str = trial_info["coreItemId"]["snapshotId"]
+                else:  # then update the existing trial
+                    response = jinko.make_request(
+                        path=f"/core/v2/trial_manager/trial/{self.trial_core_item_id}/snapshots/{self.trial_snapshot_id}",
+                        method="PATCH",
+                        json={
+                            "vpopId": {
+                                "coreItemId": vpop_core_item_id,
+                                "snapshotId": vpop_snapshot_id,
+                            },
+                            "solvingOptions": {
+                                "solvingTimes": solving_times,
+                            },
+                        },
+                    )
+                    trial_info = jinko.get_project_item_info_from_response(response)
+                    self.trial_core_item_id: str = trial_info["coreItemId"]["id"]
+                    self.trial_snapshot_id: str = trial_info["coreItemId"]["snapshotId"]
+
+                # run the trial
+                response = jinko.make_request(
+                    path=f"/core/v2/trial_manager/trial/{self.trial_core_item_id}/snapshots/{self.trial_snapshot_id}/run",
+                    method="POST",
+                )
+                jinko.monitor_trial_until_completion(
+                    self.trial_core_item_id, self.trial_snapshot_id
+                )
+                # retrieve results
+                timeseries_json = {
+                    "timeseries": {output: [arm_name] for output in outputs_names}
+                }
+                try:
+                    response = jinko.make_request(
+                        path=f"/core/v2/result_manager/trial/{self.trial_core_item_id}/snapshots/{self.trial_snapshot_id}/timeseries/download",
+                        method="POST",
+                        json=timeseries_json,
+                        options={
+                            "X-jinko-project-id": "",
+                            "Content-Type": "application/json;charset=utf-8",
+                            "Accept": "application/zip",
+                        },
+                    )
+                    if response.status_code == 200:
+                        print("Time series data retrieved successfully.")
+                        archive = zipfile.ZipFile(io.BytesIO(response.content))
+                        filename = archive.namelist()[0]
+                        csvTimeSeries = archive.read(filename).decode("utf-8")
+
+                    else:
+                        print(
+                            f"Failed to retrieve time series data: {response.status_code} - {response.reason}"
+                        )
+                        response.raise_for_status()
+                except Exception as e:
+                    print(f"Error during time series retrieval or processing: {e}")
+                    raise
+                df_time_series_before_renaming = read_csv(io.StringIO(csvTimeSeries))
+                df_time_series = df_time_series_before_renaming.rename(
+                    columns={"Patient Id": "PatientId"}
+                )
+                common_time = df_time_series["Time"]
+                unique_patients = df_time_series["PatientId"].unique()
+                list_solutions: List[torch.Tensor] = []
+                for i, patient_id in enumerate(unique_patients):
+                    patient_df = df_time_series[
+                        df_time_series["PatientId"] == patient_id
+                    ]
+                    pivoted_df = patient_df.pivot(
+                        index="Descriptor", columns="Time", values="Value"
+                    )
+
+                    # keep the times from the orginal list_time_steps
+                    diff_times = torch.abs(
+                        torch.Tensor(common_time).unsqueeze(0)
+                        - list_time_steps[i].unsqueeze(1)
+                    )
+                    indices = torch.argmin(diff_times, dim=1)
+
+                    list_solutions.append(torch.tensor(pivoted_df.values)[:, indices])
+
                 return list_solutions
 
             self.structural_model: Callable[
@@ -943,8 +1300,8 @@ with torch.no_grad():
                     )
 
                 # Store history
-                self.history["population_MI"].append(self.population_MI.clone())
                 self.history["population_betas"].append(self.population_betas.clone())
+                self.history["population_MI"].append(self.population_MI.clone())
                 self.history["population_omega"].append(self.population_omega.clone())
                 self.history["residual_error_var"].append(
                     self.residual_error_var.clone()

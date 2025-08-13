@@ -1,14 +1,13 @@
 # %% [markdown]
-# Let us use PySAEM on a PK two compartments model.
-# 
-# We assume individual parameters theta_i = cat (MI, PDU = mu_pop * exp(eta*i) * exp(coeffs_pop * covariates_i))   
-# MI is a Model Intrinsic parameter with no InterIndividual Variance (as opposed to Patient Descriptors Unknown).  
-# eta_i is an individual effect, we assume eta_i follows a normal distribution N(0,omega)  
-# We assume a normal residual error between the predictions and the observations : Yij = f(theta_ij) + epsilon_ij.  
-# epsilon_ij following N(0,sigma²)  
-# We want to estimate mu_pop (here k_12, k_21, k_el), coeffs_pop (here coeff_MEMBRANE_12_k12 and coeff_MEMBRANE_12_k21)  and omega. We also want to estimate sigma².  
-# We set betas_pop as the array [log(mu1), coeff_cov1_having_effect_on_mu1, coeff_cov2_having_effect_on_mu1, ... log(mu2), ...], here [log(k_12), coeff_MEMBRANE_12_k12, log(k_21), coeff_MEMBRANE_12_k21, log(k_el)].  
-# 
+# Let us use PySAEM on a PK two compartments model with absorption https://jinko.ai/cm-6EMF-rDU6 on jinko.
+#
+# We assume individual parameters theta_i = mu_pop * exp(eta*i) * exp(coeffs_pop * covariates_i)
+# eta_i is an individual effect, we assume eta_i follows a normal distribution N(0,omega)
+# We assume a normal residual error between the predictions and the observations : Yij = f(theta_ij) + epsilon_ij.
+# epsilon_ij following N(0,sigma²)
+# We want to estimate mu_pop (here k_12, k_21, k_el), coeffs_pop (here coeff_MEMBRANE_12_k12 and coeff_MEMBRANE_12_k21)  and omega. We also want to estimate sigma².
+# We set betas_pop as the array [log(mu1), coeff_cov1_having_effect_on_mu1, coeff_cov2_having_effect_on_mu1, ... log(mu2), ...], here [log(k_12), coeff_MEMBRANE_12_k12, log(k_21), coeff_MEMBRANE_12_k21, log(k_el)].
+#
 
 # %%
 # import simulated data, PySAEM and the PK two compartments model
@@ -23,11 +22,8 @@ print(module_directory)
 # Add the current directory to sys.path if it's not already there
 if module_directory not in sys.path:
     sys.path.append(module_directory)
-
 from PySAEM import *
-from data_pk_two_compartments_absorption import *
 from data_pysaem_example_usage import *
-from GP import *
 
 torch.set_default_dtype(torch.float32)
 
@@ -45,68 +41,37 @@ covariate_map: Dict[str, List[str]] = {
 }  # list for each PDU, which covariate influences it
 
 # %%
-# we first need to create our trained GP to pass to our NLMEModel
-# data would be our observations. here we simulate some data in the import data_pk_two_compartments_absorption.py 
-# the data should be similar to what we are going to use our GP on. Here we are using Sobol sequences to explore the space around the true parameters used to simulate the data that the GP will be used on.
-data, nb_parameters, nb_outputs, time_steps, param_names, output_names = (
-    get_data()
-)
-myGP = GP(
-    nb_parameters,
-    param_names,
-    nb_outputs,
-    output_names,
-    data,
-    var_strat="IMV",  # either IMV (Independent Multitask Variational) or LMCV (Linear Model of Coregionalization Variational)
-    kernel="RBF",  # Either RBF or SMK
-    data_already_normalized=False,  # default
-    nb_inducing_points=400,
-    mll="ELBO",  # default, otherwise PLL
-    nb_training_iter=1000,
-    training_proportion=0.7,
-    learning_rate=0.01,
-    num_mixtures=3,
-    jitter=1e-4,
-)
-myGP.train(mini_batching=False, mini_batch_size=None)
-myGP.plot_loss()
-
-# %%
-myGP.eval_perf()
-myGP.plot_obs_vs_predicted(data_set="training")
-
-# %%
-myGP.plot_loss()
-
-# %%
-myGP.plot_individual_solution(5)
-
-# %%
-# we create our NLMEModel (data structure defined in PysAEM) to pass to PySAEM
-pk_model = NLMEModel_from_GP(
+# now we can create our NLMEModel (data structure defined in PysAEM) to pass to PySAEM
+pk_model = NLMEModel_from_jinko(
     MI_names=MI_names,
     PDU_names=PDU_names,
     cov_coeffs_names=cov_coeffs_names,
     outputs_names=outputs_names,
-    GP_model=myGP,
+    folder_id="a44bd2d8-9f2d-44ab-a893-1dc9dbb3c1ab",  # this folder will be flooded with vpops created by pySAEM, use a separate dedicated folder
+    model_sid="cm-6EMF-rDU6",
+    model_rev=None,
+    protocol_sid=None,
+    protocol_rev=None,
+    time_steps_unit="s",
     error_model_type=error_model_type,
     covariate_map=covariate_map,
 )
 
 # %%
 # we have to pass timeseries of the outputs for each individual to PySAEM, under the data structure List[IndividualData]
-# here we simulate the data, with the method generate_data_for_pySAEM from data_pysaem_example_usage
-# in this method, an ODE solver is used on lists of parameters centered around the same parameters the GP was trained on, with simulated etas and covariate effects. 
-# the true parameters will of course be hidden to pySAEM which will try to infer them
-# normally, all_individual_data would be constructed from experimental observations
+# here we simulate the data, with the method generate from data_pysaem_example_usage
+# normally, all_individual_data would be constructed from experimental measures, arranged in IndividualData data structures from PySAEM
 
 # chose arbitrary theoretical values
-nb_individuals: int = 20
+nb_individuals: int = 5
 # time
-time_span: Tuple[int, int] = (0, 24)
-nb_steps: int = 20
-time_steps: torch.Tensor = torch.linspace(time_span[0], time_span[1], nb_steps)
-list_time_steps: List[torch.Tensor] = [time_steps] * nb_individuals
+list_time_steps: List[torch.Tensor] = [
+    torch.Tensor([1, 10]),
+    torch.Tensor([2, 3, 4]),
+    torch.Tensor([3, 4]),
+    torch.Tensor([1]),
+    torch.Tensor([0, 0.5]),
+]
 # true pop parameters
 V1: float = 15.0  # volume of compartment 1
 V2: float = 50.0
@@ -157,9 +122,9 @@ initial_pop_MI: torch.Tensor = torch.Tensor([0.15]).unsqueeze(-1)
 initial_pop_betas = torch.Tensor(
     [
         log(0.9),
-        -0.5,
+        -0.15,
         log(0.1),
-        -0.2,
+        -0.08,
         log(0.33),
     ]
 ).unsqueeze(-1)
@@ -175,12 +140,12 @@ saem = PySAEM(
     initial_pop_betas=initial_pop_betas,
     initial_pop_omega=initial_pop_omega,
     initial_res_var=initial_res_var,
-    mcmc_first_burn_in=20,  # used at the first iteration, bigger because the initial etas start at zeros (afterwards they start at the last etas)
-    mcmc_burn_in=2,  # used for the rest of the iterations
-    mcmc_nb_samples=3,  # nb of collected samples in MCMC per chain, after burn-in
-    mcmc_proposal_var_scaling_factor=0.5,  # the variance of the multivariate normal distribution that the next eta from the Markov Chain is sampled from is scaling_factor * omega
-    nb_saem_iterations=20,
-    saem_phase1_iterations=10, # phase 1 is the exploration phase, the learning_rate is nill and there is simulated annealing for omega and the residual error
+    mcmc_first_burn_in=1,  # used at the first iteration, bigger because the initial etas start at zeros (afterwards they start at the last etas)
+    mcmc_burn_in=1,  # used for the rest of the iterations
+    mcmc_nb_samples=1,  # nb of collected samples in MCMC per chain, after burn-in
+    mcmc_proposal_var_scaling_factor=0.3,  # the variance of the multivariate normal distribution that the next eta from the Markov Chain is sampled from is scaling_factor * omega
+    nb_saem_iterations=2,
+    saem_phase1_iterations=1,  # phase 1 is the exploration phase, the learning_rate is nill and there is simulated annealing for omega and the residual error
     saem_annealing_factor=0.95,
     verbose=True,
 )
@@ -212,5 +177,3 @@ print(
 
 # %%
 saem.plot_convergence_history(true_MI, true_betas, true_omega, true_residual_var)
-
-
