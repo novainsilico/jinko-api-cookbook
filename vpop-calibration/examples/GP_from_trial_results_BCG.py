@@ -26,6 +26,9 @@ import zipfile
 import io
 import jinko_helpers as jinko
 import numpy as np
+import sys
+
+sys.path.append("../src")
 from GP import *
 
 from IPython.display import display

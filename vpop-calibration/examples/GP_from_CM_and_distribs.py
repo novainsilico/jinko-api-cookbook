@@ -12,6 +12,9 @@ import uuid
 from math import log2, floor
 from scipy.stats import qmc
 import jinko_helpers as jinko
+import sys
+
+sys.path.append("../src")
 from GP import *
 
 torch.set_default_dtype(torch.float32)

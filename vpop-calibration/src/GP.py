@@ -5,6 +5,7 @@ import gpytorch
 from tqdm import tqdm
 from gpytorch.mlls import VariationalELBO, PredictiveLogLikelihood
 from torch.utils.data import TensorDataset, DataLoader
+import numpy as np
 
 torch.set_default_dtype(torch.float32)
 gpytorch.settings.cholesky_jitter(1e-6)
@@ -116,9 +117,23 @@ class GP:
         jitter=1e-6,
     ):
         self.nb_parameters = nb_parameters
-        self.param_names = param_names
+        if (
+            isinstance(param_names, tuple)
+            and len(param_names) == 1
+            and isinstance(param_names[0], list)
+        ):
+            self.param_names = param_names[0]
+        else:
+            self.param_names = param_names
         self.nb_outputs = nb_outputs
-        self.output_names = output_names
+        if (
+            isinstance(output_names, tuple)
+            and len(output_names) == 1
+            and isinstance(output_names[0], list)
+        ):
+            self.output_names = output_names[0]
+        else:
+            self.output_names = output_names
         self.data_already_normalized = data_already_normalized
         self.var_dist = var_dist
         self.var_strat = var_strat
@@ -390,8 +405,12 @@ class GP:
         """Plots the observed vs. predicted values on the training and validation data sets."""
         n_cols = self.nb_outputs
         n_rows = 1
-        _, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-        axes = axes.flatten()
+        if n_cols == 1:
+            _, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
+            axes = [axes]
+        else:
+            _, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
+            axes = axes.flatten()
 
         if data_set == "training":
             obs_values = self.unnormalize_output(self.Y_training).reshape(
@@ -476,11 +495,17 @@ class GP:
         )
         if self.nb_outputs == 1:  # handle single output case where axes is not an array
             axes = [axes]
-        patient_data = obs_data_set[patient_number, :, :].squeeze(1)
+        patient_data = obs_data_set[patient_number, :, :].view(-1, self.nb_outputs)
         patient_params = real_inputs[patient_number, :].flatten().tolist()
-        patient_pred_mean = pred_data_set_mean[patient_number, :, :].squeeze(1)
-        patient_pred_lower = pred_data_set_lower[patient_number, :, :].squeeze(1)
-        patient_pred_upper = pred_data_set_upper[patient_number, :, :].squeeze(1)
+        patient_pred_mean = pred_data_set_mean[patient_number, :, :].view(
+            -1, self.nb_outputs
+        )
+        patient_pred_lower = pred_data_set_lower[patient_number, :, :].view(
+            -1, self.nb_outputs
+        )
+        patient_pred_upper = pred_data_set_upper[patient_number, :, :].view(
+            -1, self.nb_outputs
+        )
         for output_index in range(self.nb_outputs):
             ax = axes[output_index]
             ax.set_xlabel("Time")
@@ -565,11 +590,18 @@ class GP:
         n_cols = self.nb_outputs
         n_rows = 1
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-        axes = axes.flatten()
+
+        n_patients = obs.shape[0]
+        colors = plt.cm.Spectral(np.linspace(0,1,n_patients))
+
+        if n_cols != 1:
+            axes = axes.flatten()
+        else:
+            axes = [axes]
         for output_index in range(self.nb_outputs):
             ax = axes[output_index]
             ax.set_xlabel("Time")
-            plt.gca().set_prop_cycle(None)
+            ax.set_prop_cycle(None)
             ax.plot(
                 self.time_steps,
                 obs[:, :, output_index].transpose(0, 1),
@@ -578,7 +610,7 @@ class GP:
                 alpha=0.6,
             )
             # Reset the color cycling to ensure proper correspondence between data and prediction
-            plt.gca().set_prop_cycle(None)
+            ax.set_prop_cycle(None)
 
             # Plot GP prediction
             ax.plot(
