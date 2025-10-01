@@ -5,12 +5,12 @@ from tqdm import tqdm
 from typing import List, Dict, Union, Callable, Optional, Tuple
 from pandas import DataFrame
 import pandas as pd
-import GP
 import os
 from datetime import datetime
 import jinko_helpers as jinko
 import zipfile, io, os
 
+from src.GP import *
 
 torch.set_default_dtype(torch.float32)
 
@@ -29,6 +29,7 @@ with torch.no_grad():
 
         def __init__(
             self,
+            structural_model: GP | Callable,
             MI_names: List[str],
             PDU_names: List[str],
             cov_coeffs_names: List[str],
@@ -36,6 +37,7 @@ with torch.no_grad():
             error_model_type: str = "additive",  # the only one implemented for now
             covariate_map: Optional[Dict[str, List[str]]] = None,
             nb_decimal_rounding_time: int = 3,
+            GP_error_threshold: float = 0.75,
         ):
             self.MI_names: List[str] = MI_names
             self.nb_MI: int = len(MI_names)
@@ -59,6 +61,74 @@ with torch.no_grad():
                         self.population_betas_names.append(cov_coeffs_names[idx])
                         idx += 1
             self.nb_decimal_rounding_time = nb_decimal_rounding_time
+            if isinstance(structural_model, Callable):
+                self.structural_model: Callable = structural_model
+            elif isinstance(structural_model, GP):
+                self.GP_model: GP = structural_model
+                self.GP_error_threshold = GP_error_threshold
+                self.structural_model = self.init_struct_model_from_gp
+
+        def init_struct_model_from_gp(self, input_data: pd.DataFrame) -> pd.DataFrame:
+            """
+            Predicts outputs using the GP model based on a single input DataFrame.
+            This DataFrame must contain columns for all individual parameters and time points.
+            input_data (DataFrame): DataFrame with columns corresponding to individual parameters, time, and output_name.
+            Returns a DataFrame with the same columns plus a predicted_value column.
+            """
+            # ensure the input DataFrame has the necessary columns
+            required_params_cols = self.MI_names + self.PDU_names
+            required_cols = ["id"] + required_params_cols + ["time", "output_name"]
+            if not all(col in input_data.columns for col in required_cols):
+                raise ValueError(
+                    f"Input DataFrame to structural_model is missing required columns. "
+                    f"Required: {required_cols}"
+                )
+
+            # get the unique parameter/time combinations to feed to the GP
+            # we need id for merging later, but the GP input only needs parameters and time.
+            unique_input_cols = ["id"] + required_params_cols + ["time"]
+            unique_inputs_df = (
+                input_data[unique_input_cols].drop_duplicates().reset_index(drop=True)
+            )
+            input_cols = required_params_cols + ["time"]
+            # reorder the columns to match the GP (parameters then time)
+            right_columns_input = unique_inputs_df[input_cols]
+            # Predict outputs with the GP model
+            # The GP predicts for all outputs at once
+            normalized_input = self.GP_model.normalize_inputs(right_columns_input)
+            mean, _, _ = self.GP_model.predict_scaled(
+                normalized_input
+            )  # of dim [nb_unique_inputs, nb_outputs]
+
+            # create a DataFrame from the predictions for easy merging
+            predicted_values_df_outputs_only = pd.DataFrame(
+                mean.numpy(), columns=self.outputs_names
+            )
+            # print(unique_inputs_df)
+            predicted_values_df = pd.merge(
+                unique_inputs_df,
+                predicted_values_df_outputs_only,
+                left_index=True,
+                right_index=True,
+            )
+            # transform in the format for SAEM where each line corresponds to one output
+            predicted_reshaped_df = pd.melt(
+                predicted_values_df,
+                id_vars=unique_input_cols,
+                value_vars=self.outputs_names,
+                var_name="output_name",
+                value_name="predicted_value",
+            )
+            # merge the original input data with the predictions
+            output_df = pd.merge(
+                input_data,
+                predicted_reshaped_df,
+                on=unique_input_cols + ["output_name"],
+                how="left",
+            )
+
+            output_df["time"] = output_df["time"].round(self.nb_decimal_rounding_time)
+            return output_df
 
         def individual_parameters(
             self,
@@ -187,132 +257,6 @@ with torch.no_grad():
                 raise ValueError("Non supported error type.")
             return log_lik
 
-    class NLMEModel_from_struct_model(NLMEModel):
-        """
-        This class inherits NLMEModel. The structural model must be given when instantiating the class. It must be a method of signature:
-        structural_model(
-                list_time_steps: List[Dict[str, torch.Tensor]],
-                list_params: List[torch.Tensor],
-            ) -> List[List[torch.Tensor]]
-        with inputs: list_time_steps: list of dictionaries associating an output name with a time_steps torch.Tensor
-                     list_params: list of individual parameters torch.Tensors for which to predict. Each parameter set correspond to one dictionary of list_time_steps.
-        """
-
-        def __init__(
-            self,
-            MI_names: List[str],
-            PDU_names: List[str],
-            cov_coeffs_names: List[str],
-            outputs_names: List[str],
-            structural_model: Callable[
-                [List[torch.Tensor], List[torch.Tensor]], List[torch.Tensor]
-            ],
-            error_model_type: str = "additive",
-            covariate_map: Optional[Dict[str, List[str]]] = None,
-            nb_decimal_rounding_time: int = 3,
-        ):
-            super().__init__(
-                MI_names,
-                PDU_names,
-                cov_coeffs_names,
-                outputs_names,
-                error_model_type,
-                covariate_map,
-                nb_decimal_rounding_time,
-            )
-            self.structural_model: Callable[
-                [List[torch.Tensor], List[torch.Tensor]], List[torch.Tensor]
-            ] = structural_model
-
-    class NLMEModel_from_GP(NLMEModel):
-        """
-        This class inherits NLMEModel. A GP must be given when instantiating the class. The structural model will be constructed from it.
-        """
-
-        def __init__(
-            self,
-            MI_names: List[str],
-            PDU_names: List[str],
-            cov_coeffs_names: List[str],
-            outputs_names: List[str],
-            GP_model: GP,
-            GP_error_threshold: float = 0.75,
-            error_model_type: str = "additive",
-            covariate_map: Optional[Dict[str, List[str]]] = None,
-            nb_decimal_rounding_time: int = 3,
-        ):
-            super().__init__(
-                MI_names,
-                PDU_names,
-                cov_coeffs_names,
-                outputs_names,
-                error_model_type,
-                covariate_map,
-                nb_decimal_rounding_time,
-            )
-            self.GP_model: GP = GP_model
-            self.GP_error_threshold = GP_error_threshold
-
-        def structural_model(
-            self,
-            input_data: DataFrame,
-        ) -> DataFrame:
-            """
-            Predicts outputs using the GP model based on a single input DataFrame.
-            This DataFrame must contain columns for all individual parameters and time points.
-            input_data (DataFrame): DataFrame with columns corresponding to individual parameters, time, and output_name.
-            Returns a DataFrame with the same columns plus a predicted_value column.
-            """
-            # ensure the input DataFrame has the necessary columns
-            required_params_cols = self.MI_names + self.PDU_names
-            required_cols = ["ind_id"] + required_params_cols + ["time", "output_name"]
-            if not all(col in input_data.columns for col in required_cols):
-                raise ValueError(
-                    f"Input DataFrame to structural_model is missing required columns. "
-                    f"Required: {required_cols}"
-                )
-
-            # get the unique parameter/time combinations to feed to the GP
-            # we need ind_id for merging later, but the GP input only needs parameters and time.
-            unique_input_cols = ["ind_id"] + required_params_cols + ["time"]
-            unique_inputs_df = (
-                input_data[unique_input_cols].drop_duplicates().reset_index(drop=True)
-            )
-            input_cols = required_params_cols + ["time"]
-            # reorder the columns to match the GP (parameters then time)
-            right_columns_input = torch.tensor(
-                unique_inputs_df[input_cols].values, dtype=torch.float32
-            )
-            # Predict outputs with the GP model
-            # The GP predicts for all outputs at once
-            normalized_input = self.GP_model.normalize_inputs(right_columns_input)
-            mean, _, _ = self.GP_model.predict_scaled(
-                normalized_input
-            )  # of dim [nb_unique_inputs, nb_outputs]
-
-            # create a DataFrame from the predictions for easy merging
-            predicted_values_df = unique_inputs_df.copy()
-            for i, output_name in enumerate(self.outputs_names):
-                predicted_values_df[output_name] = mean[:, i]
-
-            # transform in the format for SAEM where each line corresponds to one output
-            predicted_reshaped_df = pd.melt(
-                predicted_values_df,
-                id_vars=unique_input_cols,
-                value_vars=self.outputs_names,
-                var_name="output_name",
-                value_name="predicted_value",
-            )
-            # merge the original input data with the predictions
-            output_df = pd.merge(
-                input_data,
-                predicted_reshaped_df,
-                on=unique_input_cols + ["output_name"],
-                how="left",
-            )
-            output_df["time"] = output_df["time"].round(self.nb_decimal_rounding_time)
-            return output_df
-
     # --- 3. MCMC Sampler for Individual Random Effects (eta_i), used in the E-step of SAEM ---
     class MCMC_Eta_Sampler:  # one independent markov chain per individual
         """
@@ -337,15 +281,15 @@ with torch.no_grad():
             design_matrices: Dict[Union[str, int], torch.Tensor],
         ):
             self.model: NLMEModel = model
-            self.population_betas: torch.Tensor = population_betas.clone()
-            self.log_MI: torch.Tensor = log_MI.clone()
-            self.population_omega: torch.Tensor = population_omega.clone()
+            self.population_betas: torch.Tensor = population_betas
+            self.log_MI: torch.Tensor = log_MI
+            self.population_omega: torch.Tensor = population_omega
             self.residual_error_var: torch.Tensor = residual_error_var
-            self.proposal_var_eta: torch.Tensor = proposal_var_eta.clone()
+            self.proposal_var_eta: torch.Tensor = proposal_var_eta
             self.verbose = verbose
             self.observations_df = observations_df
             self.design_matrices = design_matrices
-            self.unique_ind_ids = observations_df["ind_id"].unique().tolist()
+            self.unique_ind_ids = observations_df["id"].unique().tolist()
 
         def _log_prior_etas(self, etas: torch.Tensor) -> torch.Tensor:
             """
@@ -384,8 +328,8 @@ with torch.no_grad():
             # create a single input DataFrame for the structural model from observations_df and the individual parameters
             # because we want to predict for the same time points and outputs that we have observations for
             input_data_for_model = self.observations_df[
-                self.observations_df["ind_id"].isin(ind_ids_for_etas)
-            ].copy()
+                self.observations_df["id"].isin(ind_ids_for_etas)
+            ]
             if "value" in input_data_for_model.columns:
                 input_data_for_model = input_data_for_model.drop(
                     columns=["value"]
@@ -397,7 +341,7 @@ with torch.no_grad():
                 for ind_id, params in zip(ind_ids_for_etas, list_individual_params)
             }
             for p_name_idx, p_name in enumerate(param_cols):
-                input_data_for_model[p_name] = input_data_for_model["ind_id"].map(
+                input_data_for_model[p_name] = input_data_for_model["id"].map(
                     lambda x: param_dict[x][p_name_idx]
                 )
 
@@ -411,24 +355,20 @@ with torch.no_grad():
             merged_df = pd.merge(
                 self.observations_df,
                 predictions_df,
-                on=["ind_id", "output_name", "time"],
+                on=["id", "output_name", "time"],
                 how="left",
             )
             # group by individual and calculate log-likelihood for each
             list_log_lik_obs: List[float] = []
             for ind_id in ind_ids_for_etas:
-                ind_df = merged_df[merged_df["ind_id"] == ind_id]
+                ind_df = merged_df[merged_df["id"] == ind_id]
                 total_log_lik_for_ind = 0.0
 
                 for output_name, output_df in ind_df.groupby("output_name"):
                     if output_name in self.model.outputs_names:
                         output_idx = self.model.outputs_names.index(output_name)
-                        observed_data = torch.tensor(
-                            output_df["value"].values, dtype=torch.float32
-                        )
-                        predictions = torch.tensor(
-                            output_df["predicted_value"].values, dtype=torch.float32
-                        )
+                        observed_data = torch.tensor(output_df["value"].values)
+                        predictions = torch.tensor(output_df["predicted_value"].values)
 
                         total_log_lik_for_ind += self.model.log_likelihood_observation(
                             observed_data,
@@ -446,7 +386,7 @@ with torch.no_grad():
             current_eta_for_all_ind: torch.Tensor,
             nb_samples: int,
             nb_burn_in: int,
-        ) -> Tuple[torch.Tensor, List[List[torch.Tensor]], List[List[torch.Tensor]]]:
+        ) -> Tuple[torch.Tensor, torch.Tensor, pd.DataFrame]:
             """
             Performs Metropolis-Hastings sampling for the individuals'etas. The MCMC chains (one per individual) advance in parallel.
             The acceptance criterion for each sample is log(random_uniform) < proposed_log_posterior − current_log_posterior.
@@ -513,7 +453,7 @@ with torch.no_grad():
                         # store predictions for averaging later and then use in the M-step
                         accepted_ind_id = self.unique_ind_ids[idx]
                         accepted_preds_for_ind = proposed_predictions_df[
-                            proposed_predictions_df["ind_id"] == accepted_ind_id
+                            proposed_predictions_df["id"] == accepted_ind_id
                         ]
                         predictions_history.append(accepted_preds_for_ind.copy())
 
@@ -529,13 +469,14 @@ with torch.no_grad():
 
             # calculate mean predictions from the collected history
             if predictions_history:
-                all_predictions_df = pd.concat(predictions_history, ignore_index=True)
-                mean_predictions_df = all_predictions_df.groupby(
-                    ["ind_id", "output_name", "time"], as_index=False
-                )["predicted_value"].mean()
+                mean_predictions_df = (
+                    pd.concat(predictions_history, ignore_index=True)
+                    .groupby(["id", "output_name", "time"])
+                    .agg({"predicted_value": "mean"})
+                )
             else:
                 mean_predictions_df = DataFrame(
-                    columns=["ind_id", "output_name", "time", "predicted_value"]
+                    columns=["id", "output_name", "time", "predicted_value"]
                 )
 
             if self.verbose:
@@ -544,29 +485,6 @@ with torch.no_grad():
                     print(
                         f"  MCMC Acceptance Rate for individual {i}: {acceptance_rate[i]:.2f}"
                     )
-            # plot the convergence of the MCMC chains
-            # all_states_history = torch.stack(all_states_history)
-            # nb_individuals = all_states_history.shape[
-            #     1
-            # ]  # This is the number of MCMC chains
-            # nb_PDU = all_states_history.shape[2]
-            # # Loop through each individual (MCMC chain) to create a separate plot
-            # for individual_idx in range(nb_individuals):
-            #     plt.figure(
-            #         figsize=(10, 6)
-            #     )  # Create a new figure for each individual's chain
-            #     # Loop through each parameter (mu) for the current individual's chain
-            #     for param_idx in range(nb_PDU):
-            #         plt.plot(
-            #             all_states_history[:, individual_idx, param_idx].cpu().numpy(),
-            #             label=f"Parameter {param_idx+1}",
-            #         )
-            #     plt.title(f"MCMC Chain for Individual {individual_idx+1} Convergence")
-            #     plt.xlabel("Iteration")
-            #     plt.ylabel("Parameter Value")
-            #     plt.legend()
-            #     plt.grid(True)
-            #     plt.show()
             return (mean_etas, mean_log_thetas_PDU, mean_predictions_df)
 
     # Main SAEM Algorithm Class
@@ -602,27 +520,25 @@ with torch.no_grad():
             verbose: bool = False,
         ):
             self.model: NLMEModel = model
-            if isinstance(self.model, NLMEModel_from_GP):
+            if model.GP_model:
                 observations_df["time"] = observations_df["time"].round(
                     self.model.nb_decimal_rounding_time
                 )
             self.observations_df = observations_df
             self.covariates_df = covariates_df
-            self.unique_ind_ids = self.observations_df["ind_id"].unique().tolist()
+            self.unique_ind_ids = self.observations_df["id"].unique().tolist()
             self.nb_individuals: int = len(self.unique_ind_ids)
 
-            self.log_MI: torch.Tensor = torch.log(
-                initial_pop_MI.clone()  # dim: [nb_MI]
-            )  #
+            self.log_MI: torch.Tensor = torch.log(initial_pop_MI)  # dim: [nb_MI]  #
             self.population_betas: torch.Tensor = (
-                initial_pop_betas.clone()  # dim: [nb_betas]
-            )  # log of mus and coefficients of the influence of the covariates on the parameters
+                initial_pop_betas  # dim: [nb_betas]  # log of mus and coefficients of the influence of the covariates on the parameters
+            )
             # self.estimated_MI_mus: Optional[List[float]] = (
             #     None  # TO DO: try and remove it from here
             # )
             self.population_omega: torch.Tensor = (
-                initial_pop_omega.clone()  # [nb_PDU x nb_PDU]
-            )  # covariance matrix of the random individual effects
+                initial_pop_omega  # [nb_PDU x nb_PDU]  # covariance matrix of the random individual effects
+            )
             self.residual_error_var: torch.Tensor = (
                 initial_res_var  # variance of the additive error on the observations
             )
@@ -682,12 +598,12 @@ with torch.no_grad():
             else:
                 for ind_id in self.unique_ind_ids:
                     individual_covariates = self.covariates_df[
-                        self.covariates_df["ind_id"] == ind_id
+                        self.covariates_df["id"] == ind_id
                     ].iloc[0]
                     covariates_dict = {
                         col: individual_covariates[col]
                         for col in self.covariates_df.columns
-                        if col != "ind_id"
+                        if col != "id"
                     }
                     design_matrices[ind_id] = self._create_design_matrix(
                         covariates_dict, model=self.model
@@ -701,16 +617,14 @@ with torch.no_grad():
             Creates the design matrix X_i for a single individual based on the model's covariate map.
             This matrix will be multiplied with population betas so that log(theta_i[PDU]) = X_i @ betas + eta_i.
             """
-            design_matrix_X_i = torch.zeros(
-                (model.nb_PDU, model.nb_betas), dtype=torch.float32
-            )
+            design_matrix_X_i = torch.zeros((model.nb_PDU, model.nb_betas))
             col_idx = 0
             for i, PDU_name in enumerate(model.PDU_names):
                 design_matrix_X_i[i, col_idx] = 1.0
                 col_idx += 1
                 if model.covariate_map is not None:
                     for cov_name in model.covariate_map.get(PDU_name, []):
-                        design_matrix_X_i[i, col_idx] = float(
+                        design_matrix_X_i[i, col_idx] = torch.Tensor(
                             covariates.get(cov_name, 0.0)
                         )
                         col_idx += 1
@@ -750,7 +664,7 @@ with torch.no_grad():
                 return 1.0 / (k_prime**self.learning_rate_power)
 
         def iterate(self) -> Tuple[
-            torch.Tensor,
+            List[torch.Tensor],
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
@@ -817,19 +731,15 @@ with torch.no_grad():
                 merged_df = pd.merge(
                     self.observations_df,
                     mean_predictions_df,
-                    on=["ind_id", "output_name", "time"],
+                    on=["id", "output_name", "time"],
                     how="left",
                 )
 
                 for output_name, output_df in merged_df.groupby("output_name"):
                     if output_name in self.model.outputs_names:
                         output_idx = self.model.outputs_names.index(output_name)
-                        observed_data = torch.tensor(
-                            output_df["value"].values, dtype=torch.float32
-                        )
-                        predictions = torch.tensor(
-                            output_df["predicted_value"].values, dtype=torch.float32
-                        )
+                        observed_data = torch.tensor(output_df["value"].values)
+                        predictions = torch.tensor(output_df["predicted_value"].values)
                         if predictions is not None:
                             residuals = self.model.calculate_residuals(
                                 observed_data, predictions
@@ -917,7 +827,7 @@ with torch.no_grad():
                         )
 
                     for p_name_idx, p_name in enumerate(param_cols):
-                        input_to_model[p_name] = input_to_model["ind_id"].map(
+                        input_to_model[p_name] = input_to_model["id"].map(
                             lambda x: params_dict_for_all_inds[x][p_name_idx]
                         )
 
@@ -925,7 +835,7 @@ with torch.no_grad():
                     merged_df_obj = pd.merge(
                         self.observations_df,
                         predictions_df_obj,
-                        on=["ind_id", "output_name", "time"],
+                        on=["id", "output_name", "time"],
                         how="left",
                     )
 
@@ -933,11 +843,9 @@ with torch.no_grad():
                     for output_name, output_df in merged_df_obj.groupby("output_name"):
                         if output_name in self.model.outputs_names:
                             output_idx = self.model.outputs_names.index(output_name)
-                            observed_data = torch.tensor(
-                                output_df["value"].values, dtype=torch.float32
-                            )
+                            observed_data = torch.tensor(output_df["value"].values)
                             predictions = torch.tensor(
-                                output_df["predicted_value"].values, dtype=torch.float32
+                                output_df["predicted_value"].values
                             )
                             total_log_lik += self.model.log_likelihood_observation(
                                 observed_data,
@@ -951,7 +859,7 @@ with torch.no_grad():
                     x0=self.log_MI.squeeze().numpy(),
                     method="L-BFGS-B",
                 ).x
-                target_log_MI = torch.from_numpy(target_log_MI_np).to(torch.float32)
+                target_log_MI = torch.from_numpy(target_log_MI_np)
                 self.log_MI = (
                     1 - current_alpha_k
                 ) * self.log_MI + current_alpha_k * target_log_MI
@@ -977,11 +885,13 @@ with torch.no_grad():
                     log_theta_bar, self.population_omega_chol
                 )
 
-                target_beta: torch.Tensor = torch.linalg.solve(
-                    lhs_matrix + 1e-6 * torch.eye(self.model.nb_betas),
-                    rhs_vector,
+                target_beta: torch.Tensor = torch.Tensor(
+                    torch.linalg.solve(
+                        lhs_matrix + 1e-6 * torch.eye(self.model.nb_betas),
+                        rhs_vector,
+                    )
                 )
-                self.population_betas = (
+                self.population_betas: torch.Tensor = (
                     1 - current_alpha_k
                 ) * self.population_betas + current_alpha_k * target_beta
 
@@ -1031,10 +941,10 @@ with torch.no_grad():
 
                 # update prev_params for the next iteration's convergence check
                 self.prev_params: Dict[str, torch.Tensor] = {
-                    "log_MI": self.log_MI.clone(),
-                    "population_betas": self.population_betas.clone(),
-                    "population_omega": self.population_omega.clone(),
-                    "residual_error_var": self.residual_error_var.clone(),
+                    "log_MI": self.log_MI,
+                    "population_betas": self.population_betas,
+                    "population_omega": self.population_omega,
+                    "residual_error_var": self.residual_error_var,
                 }
 
             print("\nEstimation Finished.")
@@ -1079,7 +989,7 @@ with torch.no_grad():
         def run(
             self,
         ) -> Tuple[
-            torch.Tensor,
+            List[torch.Tensor],
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
@@ -1101,27 +1011,26 @@ with torch.no_grad():
                 print(f"Initial Omega:\n{self.population_omega}")
                 print(f"Initial Residual Variance: {self.residual_error_var}")
 
-            self.history["log_MI"].append(self.log_MI.clone())
-            self.history["population_betas"].append(self.population_betas.clone())
-            self.history["population_omega"].append(self.population_omega.clone())
-            self.history["residual_error_var"].append(self.residual_error_var.clone())
+            self.history["log_MI"].append(self.log_MI)
+            self.history["population_betas"].append(self.population_betas)
+            self.history["population_omega"].append(self.population_omega)
+            self.history["residual_error_var"].append(self.residual_error_var)
 
             self.prev_params: Dict[str, torch.Tensor] = {
-                "log_MI": self.log_MI.clone(),
-                "population_betas": self.population_betas.clone(),
-                "population_omega": self.population_omega.clone(),
-                "residual_error_var": self.residual_error_var.clone(),
+                "log_MI": self.log_MI,
+                "population_betas": self.population_betas,
+                "population_omega": self.population_omega,
+                "residual_error_var": self.residual_error_var,
             }
             self.mean_etas: torch.Tensor = torch.zeros(
-                (self.nb_individuals, self.model.nb_PDU),
-                dtype=torch.float32,
+                (self.nb_individuals, self.model.nb_PDU)
             )
             return self.iterate()
 
         def continue_iterating(
             self, nb_phase1_further_iterations=0, nb_phase2_further_iterations=0
         ) -> Tuple[
-            torch.Tensor,
+            List[torch.Tensor],
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
@@ -1150,7 +1059,7 @@ with torch.no_grad():
             """
             This method plots the evolution of the estimated parameters (MI, betas, omega, residual error variances) across iterations
             """
-            history: Dict[str, List[Union[torch.Tensor, float]]] = self.history
+            history: Dict[str, List[torch.Tensor]] = self.history
             nb_MI: int = self.model.nb_MI
             nb_betas: int = self.model.nb_betas
             nb_omega_diag_params: int = self.model.nb_PDU

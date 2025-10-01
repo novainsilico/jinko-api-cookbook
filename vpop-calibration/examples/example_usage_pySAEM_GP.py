@@ -33,15 +33,18 @@ import torch
 import pickle
 import sys
 import numpy as np
+from IPython.display import display
 
-sys.path.append("../src")
-from PySAEM import *
+sys.path.append("../")
+from src.PySAEM import *
 from pk_two_compartments_equations_with_absorption import *
-from GP import *
-from DataGenerator import *
+from src.GP import *
+from src.DataGenerator import *
 
+# %load_ext autoreload
+# %autoreload 2
 
-torch.set_default_dtype(torch.float32)
+torch.set_default_dtype(torch.float64)
 
 # %%
 # let us define the arguments asked by PySAEM, corresponding to our model
@@ -76,7 +79,7 @@ data_generator = DataGenerator(
 )
 
 if reuse_existing_pickled_GP == False:  # then train GP
-    nb_time_steps = 20
+    nb_time_steps = 10
     tmax = 24.0
     time_steps = np.linspace(0.0, tmax, nb_time_steps)
     initial_conditions = np.array([10.0, 0.0, 0.0])
@@ -102,26 +105,18 @@ if reuse_existing_pickled_GP == False:  # then train GP
 
     # Transform the inputs for easier fitting
     dataset[param_names] = dataset[param_names].map(np.log10)
-
-    # Convert to a torch tensor
-    training_data = torch.tensor(
-        dataset.drop(["ind_id"], axis=1).values, dtype=torch.float32
-    )
-    torch.manual_seed(42)
+    descriptors = param_names + ["time"]
+    outputs = output_names
     myGP = GP(
-        len(MI_names)
-        + len(PDU_names)
-        + 1,  # + 1 for the time. in the backlog of the GP, I suggest to change the input to avoid this weird parameters number computation
-        param_names,
-        len(output_names),
-        output_names,
-        training_data,
+        dataset,
+        descriptors,
+        outputs,
         var_strat="IMV",  # either IMV (Independent Multitask Variational) or LMCV (Linear Model of Coregionalization Variational)
         kernel="RBF",  # Either RBF or SMK
         data_already_normalized=False,  # default
-        nb_inducing_points=200,
+        nb_inducing_points=100,
         mll="ELBO",  # default, otherwise PLL
-        nb_training_iter=700,
+        nb_training_iter=10,
         training_proportion=0.7,
         learning_rate=0.01,
         num_mixtures=3,
@@ -160,7 +155,7 @@ myGP.plot_obs_vs_predicted(data_set="training")
 
 # %%
 # we create our NLMEModel (data structure defined in PysAEM) to pass to PySAEM
-pk_model_true = NLMEModel_from_struct_model(
+pk_model_true = NLMEModel(
     MI_names=MI_names,
     PDU_names=PDU_names,
     cov_coeffs_names=cov_coeffs_names,
@@ -182,11 +177,11 @@ pk_model_true = NLMEModel_from_struct_model(
 nb_individuals: int = 50
 # time
 time_span: Tuple[int, int] = (0, 24)
-nb_steps: int = 20
+nb_steps: int = 10
 
 # For each output and for each patient, give a list of time steps to be simulated
-time_steps: torch.Tensor = torch.linspace(time_span[0], time_span[1], nb_steps)
-list_intermediate = [time_steps] * nb_outputs
+time_steps_obs: torch.Tensor = torch.linspace(time_span[0], time_span[1], nb_steps)
+list_intermediate = [time_steps_obs] * nb_outputs
 list_time_steps: List[List[torch.Tensor]] = [list_intermediate] * nb_individuals
 
 initial_conditions = np.array([10.0, 5.0, 0.0])
@@ -231,12 +226,12 @@ observations_df, covariates_df = data_generator.simulate_dataset_from_omega(
 display(observations_df)
 
 # %%
-nlme_surrogate = NLMEModel_from_GP(
+nlme_surrogate = NLMEModel(
+    structural_model=myGP,
     MI_names=MI_names,
     PDU_names=PDU_names,
     cov_coeffs_names=cov_coeffs_names,
     outputs_names=output_names,
-    GP_model=myGP,
     GP_error_threshold=0.7,
     error_model_type=error_model_type,
     covariate_map=covariate_map,
@@ -247,13 +242,15 @@ nlme_surrogate = NLMEModel_from_GP(
 # here we can start close to our true parameters used for simulation
 # normally the biomodeler has to put in some initial guess
 initial_pop_MI: torch.Tensor = torch.Tensor([0.04]).unsqueeze(-1)
-initial_pop_betas = torch.Tensor(
-    [
-        np.log(0.8),
-        # if there were a covariate influencing the first PDU (of initial guess 0.8), here we would put the coeff of its influence on the PDU (etc. for other PDUs)
-        np.log(0.18),
-        np.log(0.20),
-    ]
+initial_pop_betas = torch.log(
+    torch.Tensor(
+        [
+            0.8,
+            # if there were a covariate influencing the first PDU (of initial guess 0.8), here we would put the coeff of its influence on the PDU (etc. for other PDUs)
+            0.18,
+            0.20,
+        ]
+    )
 ).unsqueeze(-1)
 initial_pop_omega = torch.diag(torch.Tensor([0.2**2, 0.2**2, 0.5**2]))
 initial_res_var = torch.Tensor([0.04, 0.04, 0.04]).unsqueeze(
@@ -310,3 +307,5 @@ print(
 
 # %%
 saem.plot_convergence_history(true_MI, true_betas, true_omega, true_residual_var)
+
+

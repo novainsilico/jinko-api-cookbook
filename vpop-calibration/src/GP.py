@@ -6,6 +6,7 @@ from tqdm import tqdm
 from gpytorch.mlls import VariationalELBO, PredictiveLogLikelihood
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
+import pandas as pd
 
 torch.set_default_dtype(torch.float32)
 gpytorch.settings.cholesky_jitter(1e-6)
@@ -98,11 +99,9 @@ class SVGP(gpytorch.models.ApproximateGP):
 class GP:
     def __init__(
         self,
-        nb_parameters,
-        param_names,
-        nb_outputs,
-        output_names,
-        data,
+        training_df: pd.DataFrame,
+        descriptors,
+        outputs,
         var_dist="Chol",  # only Cholesky currently supported
         var_strat="IMV",  # either IMV (Independent Multitask Variational) or LMCV (Linear Model of Coregionalization Variational)
         kernel="RBF",  # RBF or SMK
@@ -116,43 +115,43 @@ class GP:
         num_mixtures=4,  # optional: only for the SMK kernel
         jitter=1e-6,
     ):
-        self.nb_parameters = nb_parameters
-        if (
-            isinstance(param_names, tuple)
-            and len(param_names) == 1
-            and isinstance(param_names[0], list)
-        ):
-            self.param_names = param_names[0]
-        else:
-            self.param_names = param_names
-        self.nb_outputs = nb_outputs
-        if (
-            isinstance(output_names, tuple)
-            and len(output_names) == 1
-            and isinstance(output_names[0], list)
-        ):
-            self.output_names = output_names[0]
-        else:
-            self.output_names = output_names
+        if not ("id" in training_df.columns.to_list()):
+            raise ValueError("Training data should contain an `id` column.")
+        if set(descriptors + outputs + ["id"]) != set(training_df.columns.to_list()):
+            raise ValueError(
+                "The provided inputs and outputs do not match the training data."
+            )
+
+        self.parameter_names = descriptors
+        self.nb_parameters = len(self.parameter_names)
+        self.output_names = outputs
+        self.nb_outputs = len(self.output_names)
         self.data_already_normalized = data_already_normalized
+
         self.var_dist = var_dist
         self.var_strat = var_strat
         self.kernel = kernel
         self.nb_training_iter = nb_training_iter
         self.training_proportion = training_proportion
         self.nb_inducing_points = nb_inducing_points
+
         if nb_latents:
             self.nb_latents = nb_latents
         else:
-            self.nb_latents = nb_outputs
+            self.nb_latents = self.nb_outputs
         self.learning_rate = learning_rate
         self.mll = mll
         self.num_mixtures = num_mixtures
         self.jitter = jitter
 
+        # Find the total number of patients in the input data set
+        self.patients = training_df["id"].unique()
+        self.nb_patients = self.patients.shape[0]
+
         # Separate data into inputs and outputs
-        self.input_data = data[:, : self.nb_parameters]
-        self.output_data = data[:, self.nb_parameters :]
+        self.raw_training_df = training_df
+        self.input_data = training_df[descriptors]
+        self.output_data = training_df[outputs]
 
         # Normalize the inputs and the outputs (only if required)
         if self.data_already_normalized == True:
@@ -164,33 +163,25 @@ class GP:
                 self.normalizing_input_mean,
                 self.normalizing_input_std,
             ) = self.normalize_data(self.input_data)
+            # Add the id column back in for filtering
+            self.normalized_input_data["id"] = training_df["id"]
 
             (
                 self.normalized_output_data,
-                self.normalizing_output_mean,
-                self.normalizing_output_std,
+                output_mean_series,
+                output_std_series,
             ) = self.normalize_data(self.output_data)
+            self.normalized_output_data["id"] = training_df["id"]
+            # Convert the output normalizing params to tensors to integrated
+            self.normalizing_output_mean = torch.Tensor(output_mean_series)
+            self.normalizing_output_std = torch.Tensor(output_std_series)
 
         # SET-UP
-        # 1. Identify the timesteps in the provided data
-        self.time_steps = data[:, nb_parameters - 1].unique().tolist()
-        self.nb_time_steps = len(self.time_steps)
-
-        # 2. Separate training and validation data sets
-        # Isolate time steps in a separate dimension
-        X_full = self.normalized_input_data.reshape(
-            [-1, len(self.time_steps), nb_parameters]
-        )
-        Y_full = self.normalized_output_data.reshape(
-            [-1, len(self.time_steps), nb_outputs]
-        )
-
-        # Find the total number of patients in the input data set
-        self.nb_patients = X_full.shape[0]
         # Compute the number of patients for training
         self.nb_patients_training = math.floor(
             self.training_proportion * self.nb_patients
         )
+        self.nb_patients_validation = self.nb_patients - self.nb_patients_training
 
         if self.training_proportion != 1:  # non-empty validation data set
             if self.nb_patients_training == self.nb_patients:
@@ -198,27 +189,49 @@ class GP:
                     "Training proportion too high for the number of sets of parameters: all would be used for training. Set training_proportion as 1 if that is your intention."
                 )
 
-            # list of randomly mixed indices
-            mixed_indices = torch.randperm(self.nb_patients)
+            # Randomly mixing up patients
+            mixed_patients = np.random.permutation(self.patients)
 
-            training_indices = mixed_indices[: self.nb_patients_training]
-            validation_indices = mixed_indices[self.nb_patients_training :]
+            self.training_patients = mixed_patients[: self.nb_patients_training]
+            self.validation_patients = mixed_patients[self.nb_patients_training :]
 
-            self.X_training = X_full[training_indices, :, :].reshape(
-                [-1, nb_parameters]
+            self.training_inputs_df = self.normalized_input_data.loc[
+                self.normalized_input_data["id"].isin(self.training_patients)
+            ]
+            self.X_training = torch.Tensor(
+                self.training_inputs_df.drop("id", axis=1).values
             )
-            self.Y_training = Y_full[training_indices, :, :].reshape([-1, nb_outputs])
 
-            self.X_validation = X_full[validation_indices, :, :].reshape(
-                [-1, nb_parameters]
+            self.training_outputs_df = self.normalized_output_data.loc[
+                self.normalized_output_data["id"].isin(self.training_patients)
+            ]
+            self.Y_training = torch.Tensor(
+                self.training_outputs_df.drop("id", axis=1).values
             )
-            self.Y_validation = Y_full[validation_indices, :, :].reshape(
-                [-1, nb_outputs]
+
+            self.validation_inputs_df = self.normalized_input_data.loc[
+                self.normalized_input_data["id"].isin(self.validation_patients)
+            ]
+            self.X_validation = torch.Tensor(
+                self.validation_inputs_df.drop("id", axis=1).values
+            )
+
+            self.validation_outputs_df = self.normalized_output_data.loc[
+                self.normalized_output_data["id"].isin(self.validation_patients)
+            ]
+            self.Y_validation = torch.Tensor(
+                self.validation_outputs_df.drop("id", axis=1).values
             )
 
         else:  # no validation data set provided
-            self.X_training = X_full.reshape([-1, nb_parameters])
-            self.Y_training = Y_full.reshape([-1, nb_outputs])
+            self.training_inputs_df = self.normalized_input_data
+            self.X_training = torch.Tensor(
+                self.training_inputs_df.drop("id", axis=1).values
+            )
+            self.training_outputs_df = self.normalized_output_data
+            self.Y_training = torch.Tensor(
+                self.training_outputs_df.drop("id", axis=1).values
+            )
 
             self.X_validation = None
             self.Y_validation = None
@@ -244,20 +257,25 @@ class GP:
             self.num_mixtures,
         )
 
-    def normalize_data(self, data_in):
-        """Normalize a tensor with respect to its mean and std."""
-        mean = data_in.mean(dim=0)
-        std = data_in.std(dim=0)
+    def normalize_data(
+        self, data_in: pd.DataFrame
+    ) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+        """Normalize a data frame with respect to its mean and std."""
+        mean = data_in.mean()
+        std = data_in.std()
         norm_data = (data_in - mean) / std
         return norm_data, mean, std
 
-    def unnormalize_output(self, vec):
+    def unnormalize_output(self, vec: torch.Tensor) -> torch.Tensor:
         """Unnormalize outputs from the GP."""
         return vec * self.normalizing_output_std + self.normalizing_output_mean
 
-    def normalize_inputs(self, vec):
+    def normalize_inputs(self, inputs_df: pd.DataFrame) -> torch.Tensor:
         """Normalize new inputs provided to the GP."""
-        return (vec - self.normalizing_input_mean) / self.normalizing_input_std
+        normalized_df = (
+            inputs_df - self.normalizing_input_mean
+        ) / self.normalizing_input_std
+        return torch.Tensor(normalized_df.values)
 
     def train(self, mini_batching=False, mini_batch_size=None):
         # TRAINING
@@ -286,7 +304,7 @@ class GP:
                 self.likelihood, self.model, num_data=self.Y_training.size(0)
             )
         else:
-            raise ValueError(f"Invalid MLL choice ({mll}). Choose ELBO or PLL.")
+            raise ValueError(f"Invalid MLL choice ({self.mll}). Choose ELBO or PLL.")
 
         # keep track of the loss
         losses_list = []
@@ -296,14 +314,7 @@ class GP:
         if mini_batching:
             # set the mini_batch_size to a power of two of the total size -4
             if mini_batch_size == None:
-                power = (
-                    math.floor(
-                        math.log2(
-                            self.nb_sets_parameters_training * len(self.time_steps)
-                        )
-                    )
-                    - 4
-                )
+                power = math.floor(math.log2(self.raw_training_df.shape[0])) - 4
                 mini_batch_size = 2**power
             self.mini_batch_size = mini_batch_size
 
@@ -401,6 +412,60 @@ class GP:
             print("Root mean squared error on validation data set (for each output):")
             print(self.RMSE_validation.tolist())
 
+    def predict_to_df(self, data_set="training"):
+        if data_set == "training":
+            pred_values = pd.DataFrame(
+                self.unnormalize_output(self.Y_training_predicted_mean).numpy()
+            )
+            pred_values.columns = self.output_names
+            pred_values["id"] = self.training_inputs_df["id"].values
+        elif data_set == "validation":
+            if self.training_proportion == 1:
+                raise ValueError("No validation data set available.")
+            pred_values = pd.DataFrame(
+                self.unnormalize_output(self.Y_validation_predicted_mean).numpy()
+            )
+            pred_values.columns = self.output_names
+            pred_values["id"] = self.validation_inputs_df["id"].values
+        else:
+            raise ValueError(
+                f"Unsupported data set choic {data_set}: choose `training` or `validation`"
+            )
+        return pred_values
+
+    def observed_data_to_df(self, data_set="training"):
+        if data_set == "training":
+            obs_values = pd.DataFrame(self.unnormalize_output(self.Y_training).numpy())
+            obs_values.columns = self.output_names
+            obs_values["id"] = self.training_inputs_df["id"].values
+        elif data_set == "validation":
+            if self.Y_validation is not None:
+                obs_values = pd.DataFrame(
+                    self.unnormalize_output(self.Y_validation).numpy()
+                )
+                obs_values.columns = self.output_names
+                obs_values["id"] = self.validation_inputs_df["id"].values
+            else:
+                raise ValueError("No validation data set available.")
+        else:
+            raise ValueError(
+                f"Unsupported data set choic {data_set}: choose `training` or `validation`"
+            )
+        return obs_values
+
+    def patient_list(self, data_set="training"):
+        if data_set == "training":
+            patients = self.training_patients
+        elif data_set == "validation":
+            if self.training_proportion == 1:
+                raise ValueError("No validation data set available.")
+            patients = self.validation_patients
+        else:
+            raise ValueError(
+                f"Unsupported data set choic {data_set}: choose `training` or `validation`"
+            )
+        return patients
+
     def plot_obs_vs_predicted(self, logScale=None, data_set="training"):
         """Plots the observed vs. predicted values on the training and validation data sets."""
         n_cols = self.nb_outputs
@@ -412,44 +477,31 @@ class GP:
             _, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
             axes = axes.flatten()
 
-        if data_set == "training":
-            obs_values = self.unnormalize_output(self.Y_training).reshape(
-                [-1, self.nb_time_steps, self.nb_outputs]
-            )
-            pred_values = self.unnormalize_output(
-                self.Y_training_predicted_mean
-            ).reshape([-1, self.nb_time_steps, self.nb_outputs])
-        elif data_set == "validation":
-            if self.training_proportion == 1:
-                raise ValueError("No validation data set available.")
-
-            obs_values = self.unnormalize_output(self.Y_validation).reshape(
-                [-1, self.nb_time_steps, self.nb_outputs]
-            )
-            pred_values = self.unnormalize_output(
-                self.Y_validation_predicted_mean
-            ).reshape([-1, self.nb_time_steps, self.nb_outputs])
+        obs_values = self.observed_data_to_df(data_set)
+        pred_values = self.predict_to_df(data_set)
+        patients = self.patient_list(data_set)
 
         if not logScale:
             logScale = [True] * self.nb_parameters
 
-        for output_index in range(self.nb_outputs):
+        for output_index, output_name in enumerate(self.output_names):
             log_viz = logScale[output_index]
             ax = axes[output_index]
             ax.set_xlabel("Observed")
             ax.set_ylabel("Predicted")
-            ax.plot(
-                obs_values[:, :, output_index],
-                pred_values[:, :, output_index],
-                "o",
-                linewidth=1,
-                alpha=0.6,
-            )
-            # Reset the color cycling to ensure proper correspondence between data and prediction
-            plt.gca().set_prop_cycle(None)
+            for _, ind in enumerate(patients):
+                obs_vec = obs_values.loc[obs_values["id"] == ind][output_name]
+                pred_vec = pred_values.loc[pred_values["id"] == ind][output_name]
+                ax.plot(
+                    obs_vec,
+                    pred_vec,
+                    "o",
+                    linewidth=1,
+                    alpha=0.6,
+                )
 
-            min_val = obs_values[:, :, output_index].min().min()
-            max_val = obs_values[:, :, output_index].max().max()
+            min_val = obs_values[output_name].min().min()
+            max_val = obs_values[output_name].max().max()
             ax.plot(
                 [min_val, max_val],
                 [min_val, max_val],
@@ -478,77 +530,71 @@ class GP:
     # plot function
     def plot_individual_solution(self, patient_number):
         """Plot the model prediction (and confidence interval) vs. the input data for a single patient. Can be either training or validation patient."""
-
-        # Reshape the data to put time in a separate dimension
-        def expand_tensor(u):
-            return u.reshape([-1, self.nb_time_steps, self.nb_outputs])
-
-        obs_data_set = expand_tensor(self.output_data)
-
-        pred_data_set_mean, pred_data_set_lower, pred_data_set_upper = map(
-            expand_tensor, self.predict_scaled(self.normalized_input_data)
+        patient_index = self.patients[patient_number]
+        patient_raw_df = self.raw_training_df.loc[
+            self.raw_training_df["id"] == patient_index
+        ]
+        patient_normalized_inputs = torch.Tensor(
+            self.normalized_input_data.loc[
+                self.normalized_input_data["id"] == patient_index
+            ]
+            .drop("id", axis=1)
+            .values
         )
-        real_inputs = self.input_data
+
+        patient_pred_mean, patient_pred_lower, patient_pred_upper = self.predict_scaled(
+            patient_normalized_inputs
+        )
 
         fig, axes = plt.subplots(
             1, self.nb_outputs, figsize=(9.0 * self.nb_outputs, 4.0)
         )
         if self.nb_outputs == 1:  # handle single output case where axes is not an array
             axes = [axes]
-        patient_data = obs_data_set[patient_number, :, :].view(-1, self.nb_outputs)
-        patient_params = real_inputs[patient_number, :].flatten().tolist()
-        patient_pred_mean = pred_data_set_mean[patient_number, :, :].view(
-            -1, self.nb_outputs
-        )
-        patient_pred_lower = pred_data_set_lower[patient_number, :, :].view(
-            -1, self.nb_outputs
-        )
-        patient_pred_upper = pred_data_set_upper[patient_number, :, :].view(
-            -1, self.nb_outputs
-        )
-        for output_index in range(self.nb_outputs):
+        patient_data = patient_raw_df[self.output_names]
+        patient_params = patient_raw_df[self.parameter_names]
+        time_steps = patient_params["time"].values
+        sorted_indices = np.argsort(time_steps)
+        sorted_time_steps = time_steps[sorted_indices]
+        for output_index, output_name in enumerate(self.output_names):
             ax = axes[output_index]
             ax.set_xlabel("Time")
             ax.plot(
-                self.time_steps,
-                patient_data[:, output_index],
-                "-",
+                sorted_time_steps,
+                patient_data[output_name].values[sorted_indices],
+                ".-",
                 color="C0",
                 linewidth=2,
                 alpha=0.6,
-                label=self.output_names[output_index],
+                label=output_name,
             )  # true values
 
             # Plot GP prediction
             ax.plot(
-                self.time_steps,
-                patient_pred_mean[:, output_index],
+                sorted_time_steps,
+                patient_pred_mean.numpy()[sorted_indices, output_index],
                 "-",
                 color="C3",
                 linewidth=2,
                 alpha=0.5,
-                label="GP prediction for "
-                + self.output_names[output_index]
-                + " (mean)",
+                label="GP prediction for " + output_name + " (mean)",
             )
             ax.fill_between(
-                self.time_steps,
-                patient_pred_upper[:, output_index],
-                patient_pred_lower[:, output_index],
+                sorted_time_steps,
+                patient_pred_upper.numpy()[sorted_indices, output_index],
+                patient_pred_lower.numpy()[sorted_indices, output_index],
                 alpha=0.5,
                 color="C3",
-                label="GP prediction for " + self.output_names[output_index] + " (CI)",
+                label="GP prediction for " + output_name + " (CI)",
             )
 
             ax.legend(loc="upper right")
-            title = f"{self.output_names[output_index]} for patient {patient_number}"
+            title = f"{output_name} for patient {patient_number}"
             ax.set_title(title)
 
             param_text = "Parameters:\n"
-            for i, name in enumerate(self.param_names):
-                param_text += (
-                    f"  {name}: {patient_params[i]:.3f}\n"  # Format to 4 decimal places
-                )
+            for name in self.parameter_names:
+                param_text += f"  {name}: {patient_params[name].values[0]:.3f}\n"  # Format to 4 decimal places
 
             ax.text(
                 1.02,
@@ -566,62 +612,52 @@ class GP:
     def plot_all_solutions(self, data_set="training"):
         """Plot the overlapped observations and model predictions for all patients, both in the training and in the validation data set."""
 
-        # Reshape the data to put time in a separate dimension
-        def expand_tensor(u):
-            return u.reshape([-1, self.nb_time_steps, self.nb_outputs])
-
-        if data_set == "training":
-            obs = expand_tensor(self.unnormalize_output(self.Y_training))
-            pred = expand_tensor(
-                self.unnormalize_output(self.Y_training_predicted_mean)
-            )
-        elif data_set == "validation":
-            if self.training_proportion == 1:
-                raise ValueError("No validation data set available.")
-            obs = expand_tensor(self.unnormalize_output(self.Y_validation))
-            pred = expand_tensor(
-                self.unnormalize_output(self.Y_validation_predicted_mean)
-            )
-        else:
-            raise ValueError(
-                f"Incorrect data set choice ({data_set}), please select training or validation"
-            )
-
+        obs = self.observed_data_to_df(data_set)
+        pred = self.predict_to_df(data_set)
+        patients = self.patient_list(data_set)
         n_cols = self.nb_outputs
         n_rows = 1
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
 
-        n_patients = obs.shape[0]
-        colors = plt.cm.Spectral(np.linspace(0,1,n_patients))
-
+        cmap = plt.cm.get_cmap("Spectral")
+        colors = cmap(np.linspace(0, 1, len(patients)))
         if n_cols != 1:
             axes = axes.flatten()
         else:
             axes = [axes]
-        for output_index in range(self.nb_outputs):
+        for output_index, output_name in enumerate(self.output_names):
             ax = axes[output_index]
             ax.set_xlabel("Time")
-            ax.set_prop_cycle(None)
-            ax.plot(
-                self.time_steps,
-                obs[:, :, output_index].transpose(0, 1),
-                "+",
-                linewidth=2,
-                alpha=0.6,
-            )
-            # Reset the color cycling to ensure proper correspondence between data and prediction
-            ax.set_prop_cycle(None)
+            for patient_num, patient_ind in enumerate(patients):
+                time_vec = self.raw_training_df.loc[
+                    self.raw_training_df["id"] == patient_ind
+                ]["time"].values
+                sorted_indices = np.argsort(time_vec)
+                sorted_times = time_vec[sorted_indices]
+                obs_vec = obs.loc[obs["id"] == patient_ind][output_name].values[
+                    sorted_indices
+                ]
+                pred_vec = pred.loc[pred["id"] == patient_ind][output_name].values[
+                    sorted_indices
+                ]
+                ax.plot(
+                    sorted_times,
+                    obs_vec,
+                    "+",
+                    color=colors[patient_num],
+                    linewidth=2,
+                    alpha=0.6,
+                )
+                ax.plot(
+                    sorted_times,
+                    pred_vec,
+                    "-",
+                    color=colors[patient_num],
+                    linewidth=2,
+                    alpha=0.5,
+                )
 
-            # Plot GP prediction
-            ax.plot(
-                self.time_steps,
-                pred[:, :, output_index].transpose(0, 1),
-                "-",
-                linewidth=2,
-                alpha=0.5,
-            )
-
-            title = f"{self.output_names[output_index]}"  # More descriptive title
+            title = f"{output_name}"  # More descriptive title
             ax.set_title(title)
 
         plt.suptitle(f"Observed vs predicted values for the {data_set} data set")

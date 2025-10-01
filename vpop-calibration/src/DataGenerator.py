@@ -6,10 +6,10 @@ from math import sqrt
 from scipy.integrate import solve_ivp
 from scipy.stats.qmc import Sobol, scale
 from multiprocessing import Pool
-from typing import List, Dict, Union, Tuple
-from PySAEM import NLMEModel
+from typing import List, Dict, Union, Tuple, Any, Callable
 import pandas as pd
 
+from src.PySAEM import NLMEModel
 
 torch.set_default_dtype(torch.float32)
 
@@ -23,7 +23,7 @@ class DataGenerator:
 
     def __init__(
         self,
-        equations: callable,
+        equations: Callable,
         variable_names: List[str],
         param_names: List[str],
     ):
@@ -47,25 +47,18 @@ class DataGenerator:
             self.variable_names = variable_names
         self.nb_outputs = len(variable_names)
 
-        if (
-            isinstance(param_names, tuple)
-            and len(param_names) == 1
-            and isinstance(param_names[0], list)
-        ):
-            self.param_names = param_names[0]
-        else:
-            self.param_names = param_names
+        self.param_names = param_names
         self.nb_parameters = len(param_names)
         self.initial_cond_names = [v + "_0" for v in self.variable_names]
 
     # this needs to be a static method for the multiprocessing to work (it cannot handle the self object)
     @staticmethod
-    def _structural_model_worker(args: dict):
+    def _structural_model_worker(args: dict) -> pd.DataFrame:
         """Worker function to simulate model on a single patient
 
         Args:
             args (dict): describes the simulation to be performed. Requires
-                ind_id: the id of the patient to be simulated
+                id: the id of the patient to be simulated
                 time_steps_dict: the time steps to be evaluated at, one np.array for each output of the model
                 initial_conditions: the initial conditions, np.array of length nb outputs
                 params_np: the parameters of the current patient
@@ -78,7 +71,7 @@ class DataGenerator:
         """
 
         # extract args
-        ind_id = args["ind_id"]
+        ind_id = args["id"]
         time_steps_dict = args["time_steps_dict"]
         initial_conditions = args["initial_conditions"]
         params_np = args["params_np"]
@@ -97,7 +90,11 @@ class DataGenerator:
             )
         )
         if not all_time_steps:
-            return [np.array([])] * len(output_names)
+            # no requested time steps
+            # return an empty data frame with the right column names
+            return pd.DataFrame(
+                columns=["id", "output_name", "time", "predicted_value"]
+            )
 
         time_span = (all_time_steps[0], all_time_steps[-1])
 
@@ -115,7 +112,7 @@ class DataGenerator:
             raise ValueError(f"ODE integration failed: {sol.message}")
 
         # Filter the solver output to keep only the requested time steps for each output
-        result = []
+        result: list[pd.DataFrame] = []
         for output_name in output_names:
             if output_name in time_steps_dict:
                 output_index = output_names.index(output_name)
@@ -128,14 +125,15 @@ class DataGenerator:
                 predicted_values = sol.y[output_index, requested_time_steps_indices]
                 individual_result = pd.DataFrame.from_dict(
                     {
-                        "ind_id": ind_id,
+                        "id": ind_id,
                         "output_name": output_name,
                         "time": requested_time_steps,
                         "predicted_value": predicted_values,
                     }
                 )
                 result.append(individual_result)
-        return pd.concat(result)
+        full_output: pd.DataFrame = pd.concat(result)
+        return full_output
 
     def structural_model(
         self,
@@ -144,15 +142,15 @@ class DataGenerator:
         """Solve the structural model using formatted input data
 
         Args:
-            input_data (pd.DataFrame): a DataFrame containing 'ind_id', 'output_name', 'time', and columns for all individual parameters and initial conditions ('var_0', for var in variable_names) for each patient
+            input_data (pd.DataFrame): a DataFrame containing 'id', 'output_name', 'time', and columns for all individual parameters and initial conditions ('var_0', for var in variable_names) for each patient
 
         Returns:
             pd.DataFrame: a DataFrame with the same inputs and a new 'predicted_value' column
         """
 
         # group the data by individual to create tasks for each process
-        tasks = []
-        for ind_id, ind_df in input_data.groupby("ind_id"):
+        tasks: list[Any] = []
+        for ind_id, ind_df in input_data.groupby("id"):
             time_steps_dict = {
                 output_name: output_df["time"].values
                 for output_name, output_df in ind_df.groupby("output_name")
@@ -161,7 +159,7 @@ class DataGenerator:
             params_np = ind_df.iloc[0].loc[self.param_names].values
             initial_conditions_np = ind_df.iloc[0].loc[self.initial_cond_names].values
             indiv_task = {
-                "ind_id": ind_id,
+                "id": ind_id,
                 "time_steps_dict": time_steps_dict,
                 "initial_conditions": initial_conditions_np,
                 "params_np": params_np,
@@ -171,18 +169,20 @@ class DataGenerator:
             }
             tasks.append(indiv_task)
         with Pool() as pool:
-            all_solutions = pool.map(DataGenerator._structural_model_worker, tasks)
+            all_solutions: list[pd.DataFrame] = pool.map(
+                DataGenerator._structural_model_worker, tasks
+            )
         output_data = pd.concat(all_solutions)
         return output_data
 
     def simulate_wide_dataset_from_ranges(
         self,
         log_nb_individuals: int,
-        param_ranges: list[dict],
-        initial_conditions: np.array,
-        residual_error_variance: np.array,
+        param_ranges: dict[str, dict[str, float | bool]],
+        initial_conditions: np.ndarray,
+        residual_error_variance: np.ndarray,
         error_model: str,  # "additive" or "proportional"
-        time_steps: np.array,
+        time_steps: np.ndarray,
     ) -> pd.DataFrame:
         """Generate a simulated data set with an ODE model
 
@@ -197,7 +197,7 @@ class DataGenerator:
             error_model (str): the type of error model ("additive" or "proportional").
             time_steps (np.array): an array with the time points
         Returns:
-            pd.DataFrame: A DataFrame with columns 'ind_id', parameter names, 'time', 'output_name', and 'value'.
+            pd.DataFrame: A DataFrame with columns 'id', parameter names, 'time', 'output_name', and 'value'.
         """
         nb_individuals = np.power(2, log_nb_individuals)
 
@@ -225,7 +225,7 @@ class DataGenerator:
         ids = [str(uuid.uuid4()) for _ in range(nb_individuals)]
         # Create the full data frame of patient descriptors
         patients_df = pd.DataFrame(data=samples, columns=self.param_names)
-        patients_df.insert(0, "ind_id", ids)
+        patients_df.insert(0, "id", ids)
 
         time_steps_df = pd.concat(
             [
@@ -243,10 +243,10 @@ class DataGenerator:
 
         output = self.structural_model(all_data)
         merged_df = pd.merge(
-            all_data, output, on=["ind_id", "output_name", "time"], how="left"
+            all_data, output, on=["id", "output_name", "time"], how="left"
         )
         wide_output = merged_df.pivot_table(
-            index=["ind_id", *self.param_names, "time"],
+            index=["id", *self.param_names, "time"],
             columns="output_name",
             values="predicted_value",
         ).reset_index()
@@ -272,14 +272,14 @@ class DataGenerator:
         list_covariates_dict: Union[None, List[Dict[str, float]]],
         list_time_steps: List[List[torch.Tensor]],
         pk_model: NLMEModel,
-        initial_conditions: np.array,
+        initial_conditions: np.ndarray,
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Generates a DataFrame for observations and a DataFrame for covariates
         for the new PySAEM class, adapted to work with DataGenerator's structural_model.
 
         Returns:
-        - observations_df: A pandas DataFrame with columns ['ind_id', 'output_name', 'time', 'value'].
+        - observations_df: A pandas DataFrame with columns ['id', 'output_name', 'time', 'value'].
         - list_covariates_dict: a list of dictionaries (each corresponding to one covariate to simulate), with the name, mean and std (only the normal distribution is supported for now)
         """
         all_covariates = []
@@ -311,7 +311,7 @@ class DataGenerator:
         for i in range(nb_individuals):
             ind_id = str(uuid.uuid4())
             if list_covariates_dict is not None and len(list_covariates_dict) > 0:
-                covariates_ind_dict = {"ind_id": ind_id}
+                covariates_ind_dict = {"id": ind_id}
                 for covariate in list_covariates_dict:
                     covariates_ind_dict.update(
                         {covariate["name"]: covariate["values"][i].item()}
@@ -346,7 +346,7 @@ class DataGenerator:
                 time_points = list_time_steps[i][j]
                 for t in time_points:
                     row = {
-                        "ind_id": ind_id,
+                        "id": ind_id,
                         "output_name": output_name,
                         "time": t.item(),
                     }
@@ -365,13 +365,13 @@ class DataGenerator:
 
         # Merge the predictions back with the input data
         merged_df = pd.merge(
-            input_df, predicted_df, on=["ind_id", "output_name", "time"], how="left"
+            input_df, predicted_df, on=["id", "output_name", "time"], how="left"
         )
 
         all_observations = []
         # Add residual error and format the final observations DataFrame
-        for ind_id in merged_df["ind_id"].unique():
-            ind_df = merged_df[merged_df["ind_id"] == ind_id]
+        for ind_id in merged_df["id"].unique():
+            ind_df = merged_df[merged_df["id"] == ind_id]
 
             for j, output_name in enumerate(pk_model.outputs_names):
                 output_df = ind_df[ind_df["output_name"] == output_name].copy()
@@ -401,7 +401,7 @@ class DataGenerator:
 
                     output_df["value"] = observed_concentration.detach().cpu().numpy()
                     all_observations.extend(
-                        output_df[["ind_id", "output_name", "time", "value"]].to_dict(
+                        output_df[["id", "output_name", "time", "value"]].to_dict(
                             "records"
                         )
                     )
