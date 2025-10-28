@@ -1,3 +1,19 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     custom_cell_magics: kql
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
+
 # %% [markdown]
 # Train a Gaussian Process given a trial
 #
@@ -11,28 +27,23 @@ import time
 import io
 import jinko_helpers as jinko
 import sys
+from IPython.display import display
 
-sys.path.append("../src")
-from GP import *
+sys.path.append("../")
+from src.gp_surrogate import *
 
-torch.set_default_dtype(torch.float32)
+# %load_ext autoreload
+# %autoreload 2
 
 # %%
 # jinko set-up
 jinko.initialize()
-resources_dir = os.path.normpath("resources/download_models")
-if not os.path.exists(resources_dir):
-    os.makedirs(resources_dir)
 
 # %%
 # REPLACE WITH YOUR INFO
-trial_sid = "tr-QE4V-BMVk"
+trial_sid = "tr-OJvV-CPhT"
 
-output_names = [
-    "Line1:timeToProgression"
-]  # these are the outputs you want to train the GP on
-arm_name = "Gefitinib"  # default if you have not named an arm
-nb_outputs = len(output_names)
+output_names = ["A1", "A2"]  # these are the outputs you want to train the GP on
 
 # %% [markdown]
 # From now on, no modification is necessary. The notebook will get the patient descriptors of the Vpop, the timeseries of the outputs and train a GP on them.
@@ -51,6 +62,8 @@ model_core_item_id = trial_info["computationalModelId"]["coreItemId"]
 model_snapshot_id = trial_info["computationalModelId"]["snapshotId"]
 vpop_core_item_id = trial_info["vpopId"]["coreItemId"]
 vpop_snapshot_id = trial_info["vpopId"]["snapshotId"]
+protocol_design_core_id = trial_info["protocolDesignId"]["coreItemId"]
+protocol_design_snapshot_id = trial_info["protocolDesignId"]["snapshotId"]
 
 # %%
 # get virtual patients attributes into a dataframe
@@ -67,21 +80,41 @@ patient_attributes_list = (
 )  # list of dictionaries (one dictionary corresponds to one patient, with its id and parameters)
 for patient in vpop_data["patients"]:
     patient_index = patient["patientIndex"]
-    attributes = {
-        "PatientId": patient_index
-    }  # Renaming directly to PatientId for easier merge
+    attributes = {"id": patient_index}
     for attr in patient["patientAttributes"]:
         attributes[attr["id"]] = attr["val"]
     patient_attributes_list.append(attributes)
 
 pd_names = [attr["id"] for attr in vpop_data["patients"][0]["patientAttributes"]]
+display(pd_names)
 nb_pds = len(pd_names)
 df_patient_attributes = pd.DataFrame(patient_attributes_list)
+
+descriptors = pd_names + ["Time"]
+display(descriptors)
+
+# %%
+# retrieve protocol arms from the design
+response = jinko.make_request(
+    path=f"/core/v2/scenario_manager/protocol_design/{protocol_design_core_id}/snapshots/{protocol_design_snapshot_id}",
+    method="GET",
+    json={
+        "Accept": "application/json;charset=utf-8, text/csv",
+    },
+)
+protocol_design = response.json()
+protocol_arms = [arm["armName"] for arm in protocol_design["scenarioArms"]]
+display(protocol_arms)
+
+selected_protocol_arms = protocol_arms[:2]
+display(selected_protocol_arms)
 
 # %%
 # retrieve results
 time.sleep(0.5)
-timeseries_json = {"timeseries": {output: [arm_name] for output in output_names}}
+timeseries_json = {
+    "timeseries": {output: selected_protocol_arms for output in output_names}
+}
 try:
     response = jinko.make_request(
         path=f"/core/v2/result_manager/trial/{trial_core_item_id}/snapshots/{trial_snapshot_id}/timeseries/download",
@@ -111,43 +144,39 @@ except Exception as e:
     raise
 
 # %%
-# data processing
+# Merge time series with patient descriptors together in a single data frame
 df_time_series = pd.read_csv(io.StringIO(csvTimeSeries))
-df_time_series = df_time_series.rename(columns={"Patient Id": "PatientId"})
-merged_df = pd.merge(df_time_series, df_patient_attributes, on="PatientId")
-pivot_df = merged_df.pivot_table(
-    index=["PatientId", "Arm", "Time"] + list(pd_names),
-    columns="Descriptor",
-    values="Value",
-).reset_index()
-final_df = pivot_df[list(pd_names) + ["Time"] + list(output_names)]
-data = torch.tensor(final_df.values, dtype=torch.float32)
-time_steps = pivot_df[pivot_df["PatientId"] == pivot_df["PatientId"][0]]["Time"]
+df_time_series = df_time_series.rename(columns={"Patient Id": "id"})
+merged_df = pd.merge(df_time_series, df_patient_attributes, on="id").rename(
+    columns={
+        "Arm": "protocol_arm",
+        "Value": "value",
+        "Descriptor": "output_name",
+        "Time": "time",
+    }
+)
+display(merged_df)
+
 
 # %%
-data
+def scheduler(optim):
+    return torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.99)
 
-# %%
-final_df
 
-# %%
 # initiate our GP class
 myGP = GP(
-    nb_pds + 1,
-    pd_names,
-    nb_outputs,
-    output_names,
-    data,
-    var_strat="IMV",  # either IMV (Independent Multitask Variational) or LMCV (Linear Model of Coregionalization Variational)
-    kernel="RBF",  # Either RBF or SMK
-    data_already_normalized=False,  # default
+    merged_df,
+    pd_names + ["time"],
+    var_dist="Chol",
+    var_strat="IMV",
+    kernel="RBF",
+    data_already_normalized=False,
+    nb_training_iter=500,
+    training_proportion=0.9,
     nb_inducing_points=100,
-    mll="ELBO",  # default, otherwise PLL
-    nb_training_iter=100,
-    training_proportion=0.7,
-    learning_rate=0.01,
-    num_mixtures=3,
-    jitter=1e-4,
+    learning_rate=0.05,
+    scheduler=scheduler,
+    jitter=1e-6,
 )
 
 # %%
@@ -158,5 +187,10 @@ myGP.eval_perf()
 myGP.plot_loss()
 
 # %%
-myGP.plot_all_solutions("training")
-myGP.plot_all_solutions("validation")
+myGP.plot_obs_vs_predicted(data_set=merged_df)
+
+# %%
+myGP.plot_all_solutions(data_set=merged_df)
+
+# %%
+myGP.plot_individual_solution(2)

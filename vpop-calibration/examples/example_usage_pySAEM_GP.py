@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -18,14 +17,6 @@
 # %% [markdown]
 # Let us use PySAEM on a PK two compartments model.
 #
-# We assume individual parameters theta*i = cat (MI, PDU = mu_pop * exp(eta*i) * exp(coeffs*pop * covariates_i))
-# MI is a Model Intrinsic parameter with no InterIndividual Variance (as opposed to Patient Descriptors Unknown).
-# eta_i is an individual effect, we assume eta_i follows a normal distribution N(0,omega)
-# We assume a normal residual error between the predictions and the observations : Yij = f(theta_ij) + epsilon_ij.
-# epsilon_ij following N(0,sigma²)
-# We want to estimate mu_pop (here k_12, k_21, k_el), coeffs_pop (here coeff_MEMBRANE_12_k12 and coeff_MEMBRANE_12_k21) and omega. We also want to estimate sigma².
-# We set betas_pop as the array [log(mu1), coeff_cov1_having_effect_on_mu1, coeff_cov2_having_effect_on_mu1, ... log(mu2), ...], here [log(k_12), coeff_MEMBRANE_12_k12, log(k_21), coeff_MEMBRANE_12_k21, log(k_el)].
-#
 
 # %%
 # import simulated data, PySAEM and the PK two compartments model
@@ -34,98 +25,112 @@ import pickle
 import sys
 import numpy as np
 from IPython.display import display
+from plotnine import *
+import uuid
 
 sys.path.append("../")
-from src.PySAEM import *
-from pk_two_compartments_equations_with_absorption import *
-from src.GP import *
-from src.DataGenerator import *
+from src.pysaem import *
+from src.ode_model.pk_two_compartments_equations_with_absorption import *
+from src.gp_surrogate import *
+from src.nlme import *
 
 # %load_ext autoreload
 # %autoreload 2
 
-torch.set_default_dtype(torch.float64)
+# %% [markdown]
+# # Step 1: Train the GP
+#
+
+# %% [markdown]
+# ### Generate a training data set using an ODE model
+#
+# First we initiate an ODE model that will allow us to generate training data for the GP and synthetic real world data for running SAEM later.
+#
 
 # %%
-# let us define the arguments asked by PySAEM, corresponding to our model
-MI_names: List[str] = ["k_a"]
-PDU_names: List[str] = ["k_12", "k_21", "k_el"]
-cov_coeffs_names: List[str] = []
-output_names: List[str] = ["A0", "A1", "A2"]
-nb_outputs = len(output_names)
-error_model_type: str = "additive"
-covariate_map: Dict[str, List[str]] = {
-    "k_12": [],
-    "k_21": [],
-    "k_el": [],
-}  # list for each PDU, which covariate influences it
+# We need an ODE model, a protocol design, initial conditions and time steps
+ode_model = pk_two_compartments_abs_model
+print(ode_model.variable_names)
+
+protocol_design = pd.DataFrame(
+    {"protocol_arm": ["arm-A", "arm-B"], "k_el": [0.5, 10]}
+)  # this is just a dummy design
+time_span = (0, 24)
+nb_steps = 20
+
+# For each output and for each patient, give a list of time steps to be simulated
+time_steps = np.linspace(time_span[0], time_span[1], nb_steps).tolist()
+
+initial_conditions = np.array([10.0, 0.0, 0.0])
+
+# Simulate a training data set using parameters sampled via Sobol sequences
+log_nb_patients = 8
+param_ranges = {
+    "k_12": {"low": -2.0, "high": 0.0, "log": True},
+    "k_21": {"low": -1.0, "high": 1.0, "log": True},
+    "k_a": {"low": 0.0, "high": 1.0, "log": True},
+}
+learned_ode_params = list(param_ranges.keys())
+nb_protocols = len(protocol_design)
+print(f"Simulating {2**log_nb_patients} patients on {nb_protocols} scenario arms")
+dataset = ode_model.simulate_wide_dataset_from_ranges(
+    log_nb_patients,
+    param_ranges,
+    initial_conditions,
+    protocol_design,
+    None,
+    None,
+    time_steps,
+)
+display(dataset)
+
+# %%
+p1 = (
+    ggplot(dataset, aes(x="time", y="value", color="id"))
+    + geom_line()
+    + facet_grid(rows="protocol_arm", cols="output_name")
+    + theme(legend_position="none")
+)
+
+p1.show()
+
+# %% [markdown]
+# ### Train the GP, or load an existing pickle
+#
+
+# %%
+reuse_existing_pickled_GP = False  # pass it to true once you have trained the GP and saved it in a .pkl file (next cells). This way, you can reuse it!
+save_GP_for_reuse = False  # pass it to False if you don't want a dowloaded pickel file of your serialized GP
+
+pickled_GP_name = "my_gp_save.pkl"  # your trained GP will be saved under this name
 
 # %%
 # we first need to create our trained GP to pass to our NLMEModel
 # data would be our observations. here we simulate some data with our DataGenerator
 # the data should be similar to what we are going to use our GP on. Here we are using Sobol sequences to explore the space around the true parameters used to simulate the data that the GP will be used on.
 
-reuse_existing_pickled_GP = False  # pass it to true once you have trained the GP and saved it in a .pkl file (next cells). This way, you can reuse it!
-save_GP_for_reuse = False  # pass it to False if you don't want a dowloaded pickel file of your serialized GP
-pickled_GP_name = "my_gp_save.pkl"  # your trained GP will be saved under this name
+gp_descriptors = learned_ode_params + ["time"]
 
 
-# instantiate our DataGenerator, which we will use to generate data both to train our GP on and to execute SAEM on
-param_names = MI_names + PDU_names
-data_generator = DataGenerator(
-    pk_two_compartments_model,
-    output_names,
-    param_names,
+myGP = GP(
+    dataset,
+    gp_descriptors,
+    var_strat="IMV",  # either IMV (Independent Multitask Variational) or LMCV (Linear Model of Coregionalization Variational)
+    kernel="RBF",  # Either RBF or SMK
+    nb_inducing_points=50,
+    nb_training_iter=500,
+    training_proportion=0.9,
+    learning_rate=0.1,
+    jitter=1e-5,
+    log_inputs=learned_ode_params,
+    lr_decay=0.99,
 )
-
 if reuse_existing_pickled_GP == False:  # then train GP
-    nb_time_steps = 10
-    tmax = 24.0
-    time_steps = np.linspace(0.0, tmax, nb_time_steps)
-    initial_conditions = np.array([10.0, 0.0, 0.0])
-    observation_noise = np.array([0.1, 0.05, 0.03])
-    log2_nb_patients = 8
-    nb_patients = 2**log2_nb_patients
-    param_ranges = {
-        "k_a": {"low": -2, "high": 0, "log": True},
-        "k_12": {"low": 0.02, "high": 0.07, "log": False},
-        "k_21": {"low": 0.1, "high": 0.3, "log": False},
-        "k_el": {"low": -4, "high": 0, "log": True},
-    }
 
-    print(f"Simulating {2**log2_nb_patients} patients")
-    dataset = data_generator.simulate_wide_dataset_from_ranges(
-        log2_nb_patients,
-        param_ranges,
-        initial_conditions,
-        observation_noise,
-        "additive",
-        time_steps,
-    )
-
-    # Transform the inputs for easier fitting
-    dataset[param_names] = dataset[param_names].map(np.log10)
-    descriptors = param_names + ["time"]
-    outputs = output_names
-    myGP = GP(
-        dataset,
-        descriptors,
-        outputs,
-        var_strat="IMV",  # either IMV (Independent Multitask Variational) or LMCV (Linear Model of Coregionalization Variational)
-        kernel="RBF",  # Either RBF or SMK
-        data_already_normalized=False,  # default
-        nb_inducing_points=100,
-        mll="ELBO",  # default, otherwise PLL
-        nb_training_iter=10,
-        training_proportion=0.7,
-        learning_rate=0.01,
-        num_mixtures=3,
-        jitter=1e-4,
-    )
     print("Training the GP")
     myGP.train(mini_batching=False, mini_batch_size=None)
     myGP.plot_loss()
-else:  # reuse serialized GP
+else:  # reuse serialized GP (overrides the above definition)
     filepath = pickled_GP_name
 
     try:
@@ -141,7 +146,7 @@ else:  # reuse serialized GP
         )
 
 # %%
-if reuse_existing_pickled_GP == False and save_GP_for_reuse:
+if (reuse_existing_pickled_GP == False) and (save_GP_for_reuse == True):
     import pickle
 
     filepath = pickled_GP_name
@@ -153,159 +158,149 @@ if reuse_existing_pickled_GP == False and save_GP_for_reuse:
 myGP.eval_perf()
 myGP.plot_obs_vs_predicted(data_set="training")
 
+# %% [markdown]
+# # Step 2: Generate a real-world data set
+#
+
+# %%
+# Set up an NLME model to simulate a real-world data set
+structural_model = StructuralOdeModel(
+    ode_model, protocol_design, initial_conditions, time_steps
+)
+
+# Parameter definitions
+true_log_MI = {}
+true_log_PDU = {
+    "k_12": {"mean": -1, "sd": 0.25},
+    "k_21": {"mean": 0, "sd": 0.25},
+}
+error_model_type = "additive"
+true_res_var = [0.5, 0.02, 0.1]
+# list for each PDU, which covariate influences it, and the name of the coefficient
+covariate_map = {
+    "k_12": {"foo": {"coef": "cov_foo_k12", "value": 0.1}},
+    "k_21": {},
+}
+
+# Create a patient data frame
+# It should contain at the very minimum one `id` per patient
+nb_patients = 52
+patients_df = pd.DataFrame({"id": [str(uuid.uuid4()) for _ in range(nb_patients)]})
+rng = np.random.default_rng()
+patients_df["protocol_arm"] = rng.binomial(1, 0.5, nb_patients)
+patients_df["protocol_arm"] = patients_df["protocol_arm"].apply(
+    lambda x: "arm-A" if x == 0 else "arm-B"
+)
+patients_df["k_a"] = rng.normal(1, 0.2, nb_patients)
+patients_df["foo"] = rng.normal(0, 1, nb_patients)
+display(patients_df)
+
 # %%
 # we create our NLMEModel (data structure defined in PysAEM) to pass to PySAEM
 pk_model_true = NLMEModel(
-    MI_names=MI_names,
-    PDU_names=PDU_names,
-    cov_coeffs_names=cov_coeffs_names,
-    outputs_names=output_names,
-    structural_model=pk_two_compartments_model,
-    error_model_type=error_model_type,
-    covariate_map=covariate_map,
+    structural_model,
+    patients_df,
+    true_log_MI,
+    true_log_PDU,
+    true_res_var,
+    covariate_map,
+    error_model_type,
 )
 
 # %%
 # Generating a synthetic real life data set
 
-# we have to pass timeseries of the outputs for each individual to PySAEM, under the data structure List[IndividualData]
-# in this method, an ODE solver is used on lists of parameters centered around the same parameters the GP was trained on, with simulated etas and covariate effects.
-# the true parameters will of course be hidden to pySAEM which will try to infer them
-# normally, all_individual_data would be constructed from experimental observations
-
-# chose arbitrary theoretical values
-nb_individuals: int = 50
-# time
-time_span: Tuple[int, int] = (0, 24)
-nb_steps: int = 10
-
-# For each output and for each patient, give a list of time steps to be simulated
-time_steps_obs: torch.Tensor = torch.linspace(time_span[0], time_span[1], nb_steps)
-list_intermediate = [time_steps_obs] * nb_outputs
-list_time_steps: List[List[torch.Tensor]] = [list_intermediate] * nb_individuals
-
-initial_conditions = np.array([10.0, 5.0, 0.0])
-# true pop parameters
-V1: float = 15.0  # volume of compartment 1
-V2: float = 50.0
-Q: float = 10.0  # intercompartmental clearance
-true_k_a: float = 0.05  # absorption rate for both compartments
-true_k_el: float = 0.15  # elimination rate of compartment 1
-true_k12: float = Q / V1
-true_k21: float = Q / V2
-true_MI: torch.Tensor = torch.Tensor([true_k_a]).unsqueeze(-1)
-true_coeff_MEMBRANE12_k12 = 0.5
-true_betas: torch.Tensor = torch.Tensor(
-    [
-        np.log(true_k12),
-        np.log(true_k21),
-        np.log(true_k_el),
-    ]
-)
-true_omega: torch.Tensor = torch.tensor(
-    [[0.1**2, 0.0, 0.0], [0.0, 0.1**2, 0.0], [0.0, 0.0, 0.2**2]]
-)  # Variance of eta_k12, eta_k21, eta_k_el
-true_residual_var: torch.Tensor = torch.Tensor([0.01, 0.02, 0.03]).unsqueeze(
-    -1
-)  # residual error variance
-list_covariates_dict = None  # otherwise of the form list_covariates_dict = [{"name":"_", "mean":_, "var": 0._},{"name":"_", "mean":_, "var": 0._}...]
-# generate the data
-observations_df, covariates_df = data_generator.simulate_dataset_from_omega(
-    nb_individuals,
-    true_MI,
-    true_betas,
-    true_omega,
-    true_residual_var,
-    list_covariates_dict,
-    list_time_steps,
-    pk_model_true,
-    initial_conditions,
-)
-
-# %%
+observations_df = pk_model_true.generate_dataset_from_omega()
 display(observations_df)
 
 # %%
-nlme_surrogate = NLMEModel(
-    structural_model=myGP,
-    MI_names=MI_names,
-    PDU_names=PDU_names,
-    cov_coeffs_names=cov_coeffs_names,
-    outputs_names=output_names,
-    GP_error_threshold=0.7,
-    error_model_type=error_model_type,
-    covariate_map=covariate_map,
+p1 = (
+    ggplot(observations_df, aes(x="time", y="value", color="id"))
+    + geom_line()
+    + facet_grid(rows="protocol_arm", cols="output_name")
+    + theme(legend_position="none")
 )
 
-# %%
-# PySAEM (as any SAEM algorithm) requires initial guesses of the population parameters
-# here we can start close to our true parameters used for simulation
-# normally the biomodeler has to put in some initial guess
-initial_pop_MI: torch.Tensor = torch.Tensor([0.04]).unsqueeze(-1)
-initial_pop_betas = torch.log(
-    torch.Tensor(
-        [
-            0.8,
-            # if there were a covariate influencing the first PDU (of initial guess 0.8), here we would put the coeff of its influence on the PDU (etc. for other PDUs)
-            0.18,
-            0.20,
-        ]
-    )
-).unsqueeze(-1)
-initial_pop_omega = torch.diag(torch.Tensor([0.2**2, 0.2**2, 0.5**2]))
-initial_res_var = torch.Tensor([0.04, 0.04, 0.04]).unsqueeze(
-    -1
-)  # residual error variance
+p1.show()
+
+# %% [markdown]
+# # Step 3: Train the surrogate model on real-world data
+#
 
 # %%
-#  run PySAEM
-saem = PySAEM(
-    model=nlme_surrogate,
-    observations_df=observations_df,
-    covariates_df=None,  # None if no covariates
-    initial_pop_MI=initial_pop_MI,
-    initial_pop_betas=initial_pop_betas,
-    initial_pop_omega=initial_pop_omega,
-    initial_res_var=initial_res_var,
-    mcmc_first_burn_in=30,  # used at the first iteration, bigger because the initial etas start at zeros (afterwards they start at the last etas)
-    mcmc_burn_in=5,  # used for the rest of the iterations
-    mcmc_nb_samples=3,  # nb of collected samples in MCMC per chain, after burn-in
-    mcmc_proposal_var_scaling_factor=0.2,  # the variance of the multivariate normal distribution that the next eta from the Markov Chain is sampled from is scaling_factor * omega
+gp_structural_model = StructuralGp(gp_model=myGP, time_steps=time_steps)
+
+# Initial values for the NLME model
+# Different than the true values
+init_log_MI = {}
+init_log_PDU = {
+    "k_12": {"mean": -0.2, "sd": 0.25},
+    "k_21": {"mean": 0.2, "sd": 0.25},
+}
+init_res_var = [0.1, 0.1, 0.2]
+init_covariate_map = {
+    "k_12": {"foo": {"coef": "cov_foo_k12", "value": 0.1}},
+    "k_21": {},
+}
+
+# %%
+# Create the model to be optimized
+nlme_surrogate = NLMEModel(
+    gp_structural_model,
+    patients_df,
+    init_log_MI,
+    init_log_PDU,
+    init_res_var,
+    init_covariate_map,
+    error_model_type,
+)
+
+# Create the optimizer
+optimizer = PySAEM(
+    nlme_surrogate,
+    observations_df,
+    mcmc_burn_in=1,
+    mcmc_first_burn_in=5,
+    mcmc_nb_samples=1,
+    mcmc_proposal_var_scaling_factor=0.5,
     nb_phase1_iterations=10,
-    nb_phase2_iterations=10,  # phase 1 is the exploration phase, the learning_rate is nill and there is simulated annealing for omega and the residual error
+    nb_phase2_iterations=None,
     convergence_threshold=1e-4,
     patience=5,
     learning_rate_power=0.8,
-    annealing_factor=0.98,
-    verbose=False,
-)
-
-(
-    estimated_MI_mus,
-    estimated_betas,
-    estimated_omega,
-    estimated_var_res,
-    history,
-) = saem.run()
-
-# here we can compare with the true values we used to simulate the data
-print(f"True population MI: k_a: {true_k_a:.4f}")
-print(
-    f"True population mus: k12: {true_k12:.4f}, k21: {true_k21:.4f}, k_el: {true_k_el:.4f}"
-)
-print(
-    f"True population betas: {", ".join([f"{true_beta.item():.4f}" for true_beta in true_betas])}"
-)
-
-print(
-    f"True omega (diagonal): {", ".join([f"{val.item():.4f}" for val in torch.diag(true_omega)])}"
-)
-
-print(
-    f"True residual var: {", ".join([f"{val.item():.4f}" for val in true_residual_var.flatten()])}"
+    annealing_factor=0.95,
+    verbose=True,
 )
 
 # %%
-saem.plot_convergence_history(true_MI, true_betas, true_omega, true_residual_var)
+# %%prun -s cumulative
+optimizer.run()
+
+# %%
+map_per_patient = optimizer.plot_map_estimates()
+
+# %%
+true_MI = {name: np.exp(val) for name, val in true_log_MI.items()}
+true_mus = {name: np.exp(val["mean"]) for name, val in true_log_PDU.items()}
+true_sd = {name: val["sd"] for name, val in true_log_PDU.items()}
+true_covs = {
+    str(cov["coef"]): float(cov["value"])
+    for item in covariate_map.values()
+    for cov in item.values()
+}
+true_betas = true_mus | true_covs
+print(true_betas)
+true_sigmas = {
+    name: float(true_res_var[j]) for j, name in enumerate(ode_model.variable_names)
+}
+print(true_sigmas)
+
+# %%
+optimizer.plot_convergence_history(
+    true_MI=true_MI,
+    true_betas=true_betas,
+    true_residual_var=true_sigmas,
+    true_sd=true_sd,
+)
 
 

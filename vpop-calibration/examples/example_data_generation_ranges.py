@@ -17,58 +17,76 @@
 # %%
 import sys
 import numpy as np
+import pandas as pd
 
-sys.path.append("../src")
-from DataGenerator import DataGenerator
-from pk_two_compartments_equations import *
+sys.path.append("../")
+from src.ode_model.pk_two_compartments_equations import pk_two_compartments_model
+
+from IPython.display import display
+
+# %load_ext autoreload
+# %autoreload 2
 
 # %%
-nb_outputs = 2
-nb_parameters = 3
+my_model = pk_two_compartments_model
 nb_timesteps = 15
 tmax = 24.0
-initial_conditions = np.array([5.0, 3.0])
-output_names = ["A0", "A1"]
-param_names = ["k_12", "k_21", "k_el"]
+initial_conditions = np.array([10.0, 0.0])
 time_steps = np.linspace(0.0, tmax, nb_timesteps)
 
-data_generator = DataGenerator(
-    pk_two_compartments_model,
-    output_names,
-    param_names,
+# %%
+# Testing the simulate method
+timesteps = [0, 1, 2, 3]
+n = len(timesteps)
+df = pd.DataFrame(
+    {
+        "id": ["foo"] * n,
+        "protocol_arm": ["A"] * n,
+        "k_12": [0.5] * n,
+        "k_21": [0.1] * n,
+        "k_el": [0.1] * n,
+        "output_name": ["A0"] * n,
+        "time": timesteps,
+        "A0_0": [10] * n,
+        "A1_0": [0] * n,
+    }
 )
 
+my_model.simulate_model(df)
+
 # %%
-log_nb_patients = 3
-print(f"Simulating {2**log_nb_patients} patients")
+# Testing the simulate on ranges method
+log_nb_patients = 5
 param_ranges = {
     "k_12": {"low": 0.02, "high": 0.07, "log": False},
     "k_21": {"low": 0.1, "high": 0.3, "log": False},
-    "k_el": {"low": -4, "high": 0, "log": True},
+    "k_el": {"low": 0.1, "high": 0.3, "log": False},
 }
-dataset = data_generator.simulate_wide_dataset_from_ranges(
+
+protocol_design = pd.DataFrame({"protocol_arm": ["A", "B"], "k_el": [0.1, 0.5]})
+nb_protocols = len(protocol_design)
+print(f"Simulating {2**log_nb_patients} patients on {nb_protocols} scenario arms")
+dataset = my_model.simulate_wide_dataset_from_ranges(
     log_nb_patients,
     param_ranges,
     initial_conditions,
+    protocol_design,
     np.array([0.05, 0.0002]),
     "additive",
     time_steps,
 )
+display(dataset)
 
 # %%
 from plotnine import *
 
 p1 = (
-    ggplot(dataset, aes(x="time", y="A0", color="ind_id"))
+    ggplot(dataset, aes(x="time", y="value", color="id"))
     + geom_line()
+    + facet_grid(rows="protocol_arm", cols="output_name")
     + theme(legend_position="none")
 )
 
+p1.show()
 
-p2 = (
-    ggplot(dataset, aes(x="time", y="A1", color="ind_id"))
-    + geom_line()
-    + theme(legend_position="none", figure_size=[10, 4])
-)
 
-(p1 | p2)

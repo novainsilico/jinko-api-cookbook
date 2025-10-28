@@ -24,9 +24,12 @@ from IPython.display import display
 sys.path.append("../")
 from src.ode_model.pk_two_compartments_equations_with_absorption import *
 from src.nlme import *
+from src.pysaem import *
 
 # %load_ext autoreload
 # %autoreload 2
+
+# %load_ext cProfile
 
 # %%
 # Create an NLME model
@@ -51,7 +54,7 @@ structural_model = StructuralOdeModel(
 )
 
 # Parameter definitions
-init_log_MI = {"k_a": 0.5}
+init_log_MI = {"k_a": 0.1}
 init_log_PDU = {
     "k_12": {"mean": -1, "sd": 0.25},
     "k_21": {"mean": 0, "sd": 0.25},
@@ -71,7 +74,7 @@ covariate_map = {
 patient_covariates = pd.DataFrame(
     {
         "id": ["a", "b", "c", "d"],
-        "protocol_arm": ["arm-A", "arm-A", "arm-B", "arm-B"],
+        "protocol_arm": ["arm-A", "arm-A", "arm-B", "arm-A"],
         "foo": [1, 2, 3, 4],
         "bar": [1, 1, 1, 1],
     }
@@ -93,13 +96,50 @@ observations_df = nlme_model.generate_dataset_from_omega()
 display(observations_df)
 
 # %%
-from plotnine import *
+nlme_model.init_mcmc_sampler(observations_df, verbose=True)
 
+# %%
+eta_init = nlme_model.sample_individual_etas()
+nlme_model._log_posterior_etas(eta_init, nlme_model.patients)
 
-(
-    ggplot(observations_df, aes(x="time", y="value", color="id"))
-    + geom_line()
-    + facet_grid(rows="protocol_arm", cols="output_name")
-    + scale_color_discrete(guide=None)
-    + theme(figure_size=(16, 8))
+# %%
+# eta_init = nlme_model.sample_individual_etas()
+eta_init = torch.zeros((nlme_model.nb_patients, nlme_model.nb_PDU))
+eta, mean_PDU, pred_df = nlme_model.mcmc_sample(
+    init_eta_for_all_ind=eta_init,
+    nb_samples=1,
+    nb_burn_in=0,
+    proposal_var_eta=torch.diag(torch.Tensor([0.05, 0.05, 0.05])),
 )
+display(mean_PDU)
+
+# %%
+log_MI = nlme_model.log_MI
+log_MI_expanded = log_MI.unsqueeze(0).repeat((nlme_model.nb_patients, 1))
+theta = torch.exp(torch.cat((log_MI_expanded, mean_PDU), dim=1))
+patient_descriptors = pd.DataFrame(data=theta.numpy(), columns=nlme_model.descriptors)
+
+# %%
+predicted = nlme_model.generate_dataset_from_omega().rename(
+    columns={"value": "predicted_value"}
+)
+display(predicted)
+nlme_model.sum_sq_residuals(predicted)
+
+# %%
+optimizer = PySAEM(
+    nlme_model,
+    observations_df,
+    mcmc_burn_in=1,
+    mcmc_first_burn_in=0,
+    mcmc_nb_samples=1,
+    mcmc_proposal_var_scaling_factor=0.5,
+    nb_phase1_iterations=10,
+    nb_phase2_iterations=None,
+    convergence_threshold=1e-4,
+    patience=5,
+    learning_rate_power=0.8,
+    annealing_factor=0.95,
+    verbose=True,
+)
+optimizer.run()
