@@ -196,7 +196,26 @@ class GP:
             for output in self.output_names
         ]
         self.nb_tasks = len(self.tasks)
+        self.task_to_output = {
+            output_name + "_" + protocol_arm: output_name
+            for output_name in self.output_names
+            for protocol_arm in self.protocol_arms
+        }
 
+        self.task_idx_to_output_idx = {
+            self.tasks.index(k): self.output_names.index(v)
+            for k, v in self.task_to_output.items()
+        }
+
+        self.task_to_protocol = {
+            output_name + "_" + protocol_arm: protocol_arm
+            for output_name in self.output_names
+            for protocol_arm in self.protocol_arms
+        }
+
+        self.task_idx_to_protocol = {
+            self.tasks.index(k): v for k, v in self.task_to_protocol.items()
+        }
         if nb_latents:
             self.nb_latents = nb_latents
         else:
@@ -348,6 +367,18 @@ class GP:
 
         return unnormalized
 
+    def unnormalize_output_per_task(
+        self, data: torch.Tensor, task_indices: torch.LongTensor
+    ) -> torch.Tensor:
+        rescaled_data = data
+        for task in range(self.nb_tasks):
+            mask = torch.BoolTensor(task_indices == task)
+            rescaled_data[mask] = (
+                rescaled_data[mask] * self.normalizing_output_std[task]
+                + self.normalizing_output_mean[task]
+            )
+        return rescaled_data
+
     def normalize_inputs(self, inputs_df: pd.DataFrame) -> torch.Tensor:
         """Normalize new inputs provided to the GP, and convert them to a tensor."""
         selected_cols = self.normalizing_input_mean.index.tolist()
@@ -359,6 +390,18 @@ class GP:
             norm_data - self.normalizing_input_mean
         ) / self.normalizing_input_std
         return torch.Tensor(norm_data.values)
+
+    def normalize_inputs_tensor(self, inputs: torch.Tensor) -> torch.Tensor:
+        X = inputs
+        index_log_params = [
+            self.parameter_names.index(param) for param in self.log_inputs
+        ]
+        X[:, index_log_params] = torch.log(X[:, index_log_params])
+        mean = torch.Tensor(self.normalizing_input_mean.values)
+        std = torch.Tensor(self.normalizing_input_std.values)
+        norm_X = (X - mean) / std
+
+        return norm_X
 
     def train(self, mini_batching=False, mini_batch_size=None):
         # TRAINING
@@ -817,3 +860,14 @@ class GP:
             plt.suptitle(f"Observed vs predicted values for the {data_set} data set")
         plt.tight_layout()
         plt.show()
+
+    def predict_per_task(
+        self, X: torch.Tensor, tasks: torch.LongTensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self.model.eval()
+        self.likelihood.eval()
+        inputs = self.normalize_inputs_tensor(X)
+        with torch.no_grad():
+            pred = self.model(inputs, task_indices=tasks)
+        out_mean = self.unnormalize_output_per_task(pred.mean, task_indices=tasks)
+        return out_mean, pred.variance
