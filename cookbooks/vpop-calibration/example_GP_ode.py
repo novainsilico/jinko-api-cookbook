@@ -18,21 +18,31 @@
 import torch
 import sys
 import numpy as np
+import pandas as pd
 from IPython.display import display
 
-# %load_ext autoreload
-# %autoreload 2
+from vpop_calibration import OdeModel, simulate_dataset_from_ranges, GP
 
-sys.path.append("../")
-from src.gp_surrogate import *
-from src.ode_model.pk_two_compartments_equations_with_absorption import *
 
 # %%
-my_model = pk_two_compartments_abs_model
-nb_timesteps = 15
-tmax = 24.0
-initial_conditions = np.array([10.0, 0.0, 0.0])
-time_steps = np.linspace(0.0, tmax, nb_timesteps)
+# Define the ode model
+def equations(t, y, k_a, k_12, k_21, k_el):
+    # y[0] is A_absorption, y[1] is A_central, y[2] is A_peripheral
+    A_absorption, A_central, A_peripheral = y[0], y[1], y[2]
+    dA_absorption_dt = -k_a * A_absorption
+    dA_central_dt = (
+        k_a * A_absorption + k_21 * A_peripheral - k_12 * A_central - k_el * A_central
+    )
+    dA_peripheral_dt = k_12 * A_central - k_21 * A_peripheral
+
+    ydot = [dA_absorption_dt, dA_central_dt, dA_peripheral_dt]
+    return ydot
+
+
+variable_names = ["A0", "A1", "A2"]
+parameter_names = ["k_a", "k_12", "k_21", "k_el"]
+
+pk_two_compartments_model = OdeModel(equations, variable_names, parameter_names)
 
 # %%
 # Generate training data using an ODE model
@@ -44,10 +54,17 @@ param_ranges = {
     "k_a": {"low": -2.0, "high": 0.0, "log": True},
 }
 
+initial_conditions = np.array([10.0, 0.0, 0.0])
+
+nb_timesteps = 15
+tmax = 24.0
+time_steps = np.linspace(0.0, tmax, nb_timesteps)
+
 protocol_design = pd.DataFrame({"protocol_arm": ["arm-A", "arm-B"], "k_el": [0.1, 0.5]})
 nb_protocols = len(protocol_design)
 print(f"Simulating {nb_patients} patients on {nb_protocols} scenario arms")
-dataset = my_model.simulate_wide_dataset_from_ranges(
+dataset = simulate_dataset_from_ranges(
+    pk_two_compartments_model,
     log_nb_patients,
     param_ranges,
     initial_conditions,
@@ -72,15 +89,16 @@ myGP = GP(
     data_already_normalized=False,  # default
     nb_inducing_points=100,
     mll="ELBO",  # default, otherwise PLL
-    nb_training_iter=500,
+    nb_training_iter=200,
     training_proportion=0.7,
-    learning_rate=0.05,
+    learning_rate=0.1,
+    lr_decay=0.99,
     jitter=1e-6,
     log_inputs=learned_ode_params,
 )
 
 # %%
-myGP.train(mini_batching=False, mini_batch_size=None)
+myGP.train()
 
 # %%
 myGP.plot_loss()
