@@ -18,9 +18,9 @@ e2e:
   tags: [ nix ]
   variables:
     JK_SESSION_FILE: "/tmp/session-cookbooks"
-    JK_EMAIL: ian.bridgy@jinko.ai
-    JK_PASSWORD: password
-    JK_FINGERPRINT: 0875264d03c3df37466354bf47592a5e
+    JK_EMAIL: "$JK_EMAIL"
+    JK_PASSWORD: "$JK_PASSWORD"
+    JK_FINGERPRINT: "$JK_FINGERPRINT"
     JK_BASE_URL: "https://staging.jinko.ai/dynamic/dev-jinko/"
     JK_HABU_GRAPHQL_URL: "https://dev-jinko.api.staging.jinko.ai/_api"
     JK_CORE_REQ_ROOT_URL: "https://dev-jinko.api.staging.jinko.ai"
