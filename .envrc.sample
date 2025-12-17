@@ -6,3 +6,4 @@
 export JINKO_API_KEY="xxx"
 export JINKO_PROJECT_ID="xxx"
 export JINKO_BASE_URL="https://api.jinko.ai"
+export JINKO_URL="https://jinko.ai"

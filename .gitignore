@@ -1,6 +1,5 @@
 __pycache__
 .env
-.env*
 .envrc
 .envrc_*
 .ipynb_checkpoints
@@ -8,12 +7,9 @@ __pycache__
 .cache
 /.history
 **/iframe_figures
-cookbooks/outputs/*
-!cookbooks/outputs/.gitme
-cookbooks/model-lib/**
-cookbooks/resources/reviewing_model_versions
-cookbooks/resources/track_model_versions
-cookbooks/resources/download_models
-cookbooks/resources/vpop_generation_with_deep_learning/outputs
-cookbooks/resources/vpop_generation_with_deep_learning/inn_models
-cookbooks/resources/vpop_generation_with_deep_learning/training_material
+cookbooks/*/resources/outputs
+cookbooks/*/resources/*/outputs/*
+!cookbooks/*/resources/*/outputs/.gitme
+cookbooks/r_&_d/*/resources/*/outputs/*
+!cookbooks/r_&_d/*/resources/*/outputs/.gitme
+cookbooks/r_&_d/vpop_generation_inn/resources/vpop_generation_with_deep_learning/*

@@ -11,6 +11,7 @@ script_name="$(basename "$(readlink -f "$0")")" || {
 }
 
 COOKBOOK=run_a_trial
+COOKBOOK_PATH=basics/${COOKBOOK}
 
 # Created by argbash-init v2.10.0
 # ARG_HELP([Create necessary resources and run the "${COOKBOOK}" cookbook])
@@ -104,7 +105,7 @@ export JINKO_API_KEY=${api_key} JINKO_PROJECT_ID=${project_id} JINKO_BASE_URL=${
 echo "Executing cookbook '${COOKBOOK}'..." 1>&2
 # cookbook requires a folderId environment variable
 export folderId=${folder_id}
-${run_cookbook_script} ${cookbooks_dir}/${COOKBOOK}.ipynb || exit $?
+${run_cookbook_script} ${cookbooks_dir}/${COOKBOOK_PATH}.ipynb || exit $?
 
 exit 0
 
