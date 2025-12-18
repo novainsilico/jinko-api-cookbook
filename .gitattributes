@@ -1,10 +1,10 @@
 *.ipynb filter=cleanup-notebook
 
 # R&D notebooks: keep raw (no cleanup filter)
-cookbooks/r_&_d/trial_design_optimization/trial_design_optimization_continuous_outcome.ipynb -filter
-cookbooks/r_&_d/trial_design_optimization/trial_design_optimization_time_to_event.ipynb -filter
-cookbooks/r_&_d/trial_design_optimization/trial_design_optimization_binary_outcome.ipynb -filter
-cookbooks/r_&_d/trial_design_optimization/bayesian_optimization.ipynb -filter
+cookbooks/r_and_d/trial_design_optimization/trial_design_optimization_continuous_outcome.ipynb -filter
+cookbooks/r_and_d/trial_design_optimization/trial_design_optimization_time_to_event.ipynb -filter
+cookbooks/r_and_d/trial_design_optimization/trial_design_optimization_binary_outcome.ipynb -filter
+cookbooks/r_and_d/trial_design_optimization/bayesian_optimization.ipynb -filter
 
 # Some modeling notebooks: keep raw
 cookbooks/modeling/pre_calibration_uq.ipynb -filter

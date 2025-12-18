@@ -22,7 +22,7 @@ Find out more at [Jinko Doc](https://doc.jinko.ai)
   - Modeling, calibration & uncertainty: `cookbooks/modeling` - Modeling tools (model calibratopn, virtual population generation).
   - Trial simulation & analytics: `cookbooks/trial_simulation_and_analytics` - Run trials and perform advanced analytics on trial results. 
   - AI agents: `cookbooks/ai-agents` - AI agents as an accelerator.
-  - R&D / advanced: `cookbooks/r_&_d` - trial design optimization, vpop calibration with SAEM and deep learning techniques.
+  - R&D / advanced: `cookbooks/r_and_d` - trial design optimization, vpop calibration with SAEM and deep learning techniques.
 
 
 ## Quick-Start
