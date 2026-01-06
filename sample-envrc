@@ -1,0 +1,3 @@
+export JINKO_API_KEY="xxx"
+export JINKO_PROJECT_ID="a9593bfe-0abb-416b-8f93-4654a2b47960"
+export JINKO_BASE_URL="https://api.jinko.ai"
