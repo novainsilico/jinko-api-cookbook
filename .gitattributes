@@ -8,3 +8,6 @@ cookbooks/r_and_d/trial_design_optimization/time_to_event_outcome.ipynb -filter
 cookbooks/modeling/pre_calibration_uq.ipynb -filter
 cookbooks/modeling/post_calibration_uq.ipynb -filter
 cookbooks/modeling/hessian_matrix.ipynb -filter
+
+# Some analytics notebooks: keep raw
+cookbooks/trial_simulation_and_analytics/shap_contribution_analysis.ipynb -filter
