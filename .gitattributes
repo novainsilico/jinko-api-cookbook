@@ -11,3 +11,4 @@ cookbooks/modeling/hessian_matrix.ipynb -filter
 
 # Some analytics notebooks: keep raw
 cookbooks/trial_simulation_and_analytics/shap_contribution_analysis.ipynb -filter
+cookbooks/trial_simulation_and_analytics/goodness_of_fit.ipynb -filter
