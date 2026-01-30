@@ -28,6 +28,7 @@
             pkgs.bashInteractive
             pkgs.jq
             pkgs.nodejs
+            pkgs.python312
           ];
           shellInit = ''
             source .envrc 2> /dev/null || true
@@ -56,6 +57,7 @@
               buildInputs = shellBuildInputs;
               shellHook = ''
                 ${shellInit}
+                poetry env use ${pkgs.python312}/bin/python
                 poetry install
                 source $(poetry env info --path)/bin/activate
               '';
@@ -66,6 +68,7 @@
               buildInputs = shellBuildInputs;
               shellHook = ''
                 ${shellInit}
+                poetry env use ${pkgs.python312}/bin/python
                 poetry install
                 poetry run jupyter-lab
               '';
@@ -79,6 +82,7 @@
               ];
               shellHook = ''
                 ${shellInit}
+                poetry env use ${pkgs.python312}/bin/python
                 poetry install
                 export jinko_seeder=${jinko-seeder}
                 source ${jinko-seeder}/jinko-seeder.bash
