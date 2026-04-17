@@ -1682,14 +1682,14 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinko-sdk"
-version = "0.6.3"
+version = "0.6.4"
 description = "A Python package containing jinko_helpers, jinko_stats, and crabbit modules aimed to be used with Jinko.ai API"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "jinko_sdk-0.6.3-py3-none-any.whl", hash = "sha256:586fcccf69eff5d094f669e15d9b1bf856daae8b89b2a56e6995cc0b0d8d94e8"},
-    {file = "jinko_sdk-0.6.3.tar.gz", hash = "sha256:a306e579d678c71eb7cd2f9c62008999cb9600aa51dedd774c64e6442b20c32d"},
+    {file = "jinko_sdk-0.6.4-py3-none-any.whl", hash = "sha256:7084da736c3750ef04ad75ba7b3acfb38eb9f0a99bae3337e611c06f040b4905"},
+    {file = "jinko_sdk-0.6.4.tar.gz", hash = "sha256:248e66206134bca684e93d33f80dbcfd80748662fce2c54594e718fbd8c6b42f"},
 ]
 
 [package.dependencies]
