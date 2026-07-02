@@ -16,7 +16,7 @@ Find out more at [Jinko Doc](https://doc.jinko.ai)
 
 ## Structure
 
-- **Tutorials** (`/tutorial`): best starting point for new/external users; sequential walkthroughs of API usage.
+- **Tutorials** (`/tutorials`): best starting point for new/external users; sequential walkthroughs of API usage.
 - **Cookbooks** (`/cookbooks`): practical examples organized by product area (each folder has its own `resources/` when needed); these often depend on internal assets/access
   - Basics & execution: `cookbooks/basics` - Introductory notebooks.
   - Modeling, calibration & uncertainty: `cookbooks/modeling` - Modeling tools (model calibratopn, virtual population generation).
@@ -30,8 +30,13 @@ Find out more at [Jinko Doc](https://doc.jinko.ai)
 ### Public/external users
 1. **Get access**: create a Jinko account at [jinko.ai](https://www.jinko.ai), then create a project and generate an API key for it.
 2. **Run the tutorials**: open `tutorials/` and follow the notebook instructions—start with the first two notebooks to confirm your setup works end-to-end. You can run them locally or launch them directly in Google Colab.
-3. **Local setup (optional)**: clone the repo, copy `.envrc.sample` → `.envrc`, fill in your project ID + API key, and install the Jinko SDK in your Python env (`pip install jinko-sdk` or use `poetry` with the provided `pyproject.toml`). 
+3. **Local setup (optional)**: clone the repo, copy `.envrc.sample` → `.envrc`, fill in your project ID + API key, and install the Jinko SDK in your Python env (`pip install jinko-sdk` or use `poetry` with the provided `pyproject.toml`).
 Feel free to use any environment manager; the key requirement is having `jinko-sdk` installed.
+
+### Notebook/runtime compatibility
+- `_v2.ipynb` notebooks target the SDK v2 API surface and require `jinko-sdk > 1.2.0`.
+- Legacy notebooks without the `_v2` suffix are best used with `jinko-sdk==0.6.4`.
+- If you are a Nova internal user, run `_v2` notebooks from `jwb-shell` and legacy notebooks from `jinko-sdk-shell`.
 
 ### Nova internal users
 1. **Clone**:
@@ -44,14 +49,16 @@ Feel free to use any environment manager; the key requirement is having `jinko-s
     ```sh
     # ensure Nova Python collection is installed locally
     doctor_manage_collections
-    # load the curated env (preferred)
+    # load the legacy env for non-_v2 notebooks
     jinko-sdk-shell --refresh
+    # load the v2 env for _v2 notebooks
+    jwb-shell --refresh
     cp .envrc.sample .envrc    # fill in your key + project id
     direnv allow
     ```
 4. **Run cookbooks**:
-    - VS Code: from inside `jinko-sdk-shell`, run `code .` and pick the kernel from `jinko-sdk-shell`.
-    - Jupyter Lab: from inside `jinko-sdk-shell`, run `jupyter-lab`.
+    - Legacy notebooks: from inside `jinko-sdk-shell`, run `code .` or `jupyter-lab`, then pick the `jinko-sdk-shell` kernel.
+    - `_v2` notebooks: from inside `jwb-shell`, run `code .` or `jupyter-lab`, then pick the `jwb-shell` kernel.
 
 
 ## License

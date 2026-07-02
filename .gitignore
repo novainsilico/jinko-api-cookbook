@@ -14,3 +14,5 @@ cookbooks/r_and_d/*/resources/*/outputs/*
 !cookbooks/r_and_d/*/resources/*/outputs/.gitme
 cookbooks/r_and_d/vpop_generation_inn/resources/vpop_generation_with_deep_learning/*
 *.pkl
+.agents
+skills-lock.json
