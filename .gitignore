@@ -16,3 +16,4 @@ cookbooks/r_and_d/vpop_generation_inn/resources/vpop_generation_with_deep_learni
 *.pkl
 .agents
 skills-lock.json
+.claude
