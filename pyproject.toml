@@ -20,15 +20,15 @@ plotly = "^5.17.0"
 python = ">=3.12,<4.0"
 seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
-jinko-sdk = ">=0.5.5,<0.7.0"
-# when working with a jinko-api-helpers branch being developed, override this with : 
+jinko-sdk = "^1.3.1"
+# when working with a jinko-api-helpers branch being developed, override this with :
 # jinko-sdk = { git = "git@git.novadiscovery.net:jinko/api/jinko-api-helpers-python.git", branch = "test-minimal-poetry-file" }
 scikit-survival = "^0.23.0"
 lifelines = "^0.29.0"
 cohere = "^5.11.1"
 unstructured = { version = "^0.16.7", markers = "python_version < '3.13'" }
 hnswlib = "^0.8.0"
-unstructured-client = "0.27.0"
+unstructured-client = "^0.30.0"
 modal-python = "^0.4.2.1"
 openai = "^2.13.0"
 

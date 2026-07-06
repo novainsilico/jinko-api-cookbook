@@ -33,11 +33,6 @@ Find out more at [Jinko Doc](https://doc.jinko.ai)
 3. **Local setup (optional)**: clone the repo, copy `.envrc.sample` → `.envrc`, fill in your project ID + API key, and install the Jinko SDK in your Python env (`pip install jinko-sdk` or use `poetry` with the provided `pyproject.toml`).
 Feel free to use any environment manager; the key requirement is having `jinko-sdk` installed.
 
-### Notebook/runtime compatibility
-- `_v2.ipynb` notebooks target the SDK v2 API surface and require `jinko-sdk > 1.2.0`.
-- Legacy notebooks without the `_v2` suffix are best used with `jinko-sdk==0.6.4`.
-- If you are a Nova internal user, run `_v2` notebooks from `jwb-shell` and legacy notebooks from `jinko-sdk-shell`.
-
 ### Nova internal users
 1. **Clone**:
     ```sh
@@ -49,16 +44,16 @@ Feel free to use any environment manager; the key requirement is having `jinko-s
     ```sh
     # ensure Nova Python collection is installed locally
     doctor_manage_collections
-    # load the legacy env for non-_v2 notebooks
+    # load the legacy env for _deprecated notebooks
     jinko-sdk-shell --refresh
-    # load the v2 env for _v2 notebooks
+    # load the env for current notebooks (typed jinko-sdk)
     jwb-shell --refresh
     cp .envrc.sample .envrc    # fill in your key + project id
     direnv allow
     ```
 4. **Run cookbooks**:
-    - Legacy notebooks: from inside `jinko-sdk-shell`, run `code .` or `jupyter-lab`, then pick the `jinko-sdk-shell` kernel.
-    - `_v2` notebooks: from inside `jwb-shell`, run `code .` or `jupyter-lab`, then pick the `jwb-shell` kernel.
+    - Current notebooks (typed `jinko-sdk`): from inside `jwb-shell`, run `code .` or `jupyter-lab`, then pick the `jwb-shell` kernel.
+    - `_deprecated` notebooks (legacy `jinko_helpers`): from inside `jinko-sdk-shell`, run `code .` or `jupyter-lab`, then pick the `jinko-sdk-shell` kernel. These are kept for reference only — prefer the current notebook with the same base name when one exists.
 
 
 ## License

@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "skills": {
+    "jk-context": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-context/SKILL.md",
+      "computedHash": "e50632d9c4fb368c10699bf9864a3f0f77efa3be0d4955d74da2be18f751bb89"
+    },
+    "jk-data-table": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-data-table/SKILL.md",
+      "computedHash": "e33632f40f405128a83a00bf91b64797edb83cd1cc0db07da56982c077760ad7"
+    },
+    "jk-document": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-document/SKILL.md",
+      "computedHash": "84faf00c4231891d65e6a732f5025d5502ca879447afcf3c43568472f5744524"
+    },
+    "jk-literature-search": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-literature-search/SKILL.md",
+      "computedHash": "7930c74d8b9a2b41286b04249981e3454d90edf44a33860c9deba6de83dece7c"
+    },
+    "jk-mistral-ocr": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-mistral-ocr/SKILL.md",
+      "computedHash": "ecaea11ca4c791a33ce2fd2439d40a5a95395b11b5d49960c426d447ad349b7c"
+    },
+    "jk-model": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-model/SKILL.md",
+      "computedHash": "a1ab46e29800986a325af61dc153e43577a23e4f65f621a08d0a13c403b8d096"
+    },
+    "jk-protocol": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-protocol/SKILL.md",
+      "computedHash": "5eea21e157178fb49e07a2a3fba9c49c299ad3644be48e95bdaaa37a7eba7983"
+    },
+    "jk-sdk-setup": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-sdk-setup/SKILL.md",
+      "computedHash": "7341d2ba7db4a449518d3f0beb3ddc6ac942b5338b02a9787b32bde94d1a0643"
+    },
+    "jk-solution-and-product-guide": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-solution-and-product-guide/SKILL.md",
+      "computedHash": "5cd3e8974a5ea9b7eef1d466735992c025d8a7c96d7a498a76783b52c404f6ad"
+    },
+    "jk-trial": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-trial/SKILL.md",
+      "computedHash": "bc23b09511902df6a7a4e6244bd52141176377289d1f7cb9baea82a0b9a19b74"
+    },
+    "jk-trial-data-scoping": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-trial-data-scoping/SKILL.md",
+      "computedHash": "2e5edbf94929bc9296805d43d4fc472795270fe7b9ca2525d6b243517880ddee"
+    },
+    "jk-trial-viz": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-trial-viz/SKILL.md",
+      "computedHash": "ff46ebf435c27033581d796d4033a1398d5c2604d1943645409be56272bd7ac0"
+    },
+    "jk-vpop": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-vpop/SKILL.md",
+      "computedHash": "49002c636205cdd81812dae4740ff180be1fa5eb471cad3bb3c321c69b1032b7"
+    },
+    "jk-workflow-project-scoping": {
+      "source": "git@git.novadiscovery.net:jinko/ai/jinko-workbench.git",
+      "sourceType": "git",
+      "skillPath": "skills/jk-workflow-project-scoping/SKILL.md",
+      "computedHash": "46a1f7e8b92e7960307106e6dcde14231d5f5a2fae3220fa54fb3ae93ba63153"
+    }
+  }
+}
