@@ -1674,19 +1674,20 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinko-sdk"
-version = "1.3.1"
+version = "1.5.0"
 description = "Official typed Python SDK for the Jinkō clinical trial simulation platform (jinko.ai) — script models, trials, virtual populations, and results."
 optional = false
-python-versions = ">=3.12"
+python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "jinko_sdk-1.3.1-py3-none-any.whl", hash = "sha256:8f83e5d752c2893cd7d478f1f4eae0548a18051e2b0dc036c998cadcbe1113ad"},
-    {file = "jinko_sdk-1.3.1.tar.gz", hash = "sha256:129e3e161a71fa90aeab795916685aad4646d08188e71721b4c013e124f65fec"},
+    {file = "jinko_sdk-1.5.0-py3-none-any.whl", hash = "sha256:f1681d9f1b30ea1545d15e3f2c7b1a3a2d6982e891ec83969db1bffa73bb802b"},
+    {file = "jinko_sdk-1.5.0.tar.gz", hash = "sha256:23d0c4c6d65e4bed73fa5dcc4efd928d9afeacd92bfac6d660934f38187d421a"},
 ]
 
 [package.dependencies]
 pydantic = ">=2.13.4"
-tabulate = ">=0.10.0"
+rich = ">=15.0.0"
+typing-extensions = ">=4.4"
 
 [[package]]
 name = "jiter"
@@ -4473,14 +4474,14 @@ testing = ["pytest (>=8.3.5)"]
 
 [[package]]
 name = "rich"
-version = "14.3.3"
+version = "15.0.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 optional = false
-python-versions = ">=3.8.0"
+python-versions = ">=3.9.0"
 groups = ["main"]
 files = [
-    {file = "rich-14.3.3-py3-none-any.whl", hash = "sha256:793431c1f8619afa7d3b52b2cdec859562b950ea0d4b6b505397612db8d5362d"},
-    {file = "rich-14.3.3.tar.gz", hash = "sha256:b8daa0b9e4eef54dd8cf7c86c03713f53241884e814f4e2f5fb342fe520f639b"},
+    {file = "rich-15.0.0-py3-none-any.whl", hash = "sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"},
+    {file = "rich-15.0.0.tar.gz", hash = "sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36"},
 ]
 
 [package.dependencies]
@@ -5513,4 +5514,4 @@ ai-exploration-deps = ["unstructured"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "9059ffd701c628ffd1ab461f20ff217c07c1cdbaee794c909747184271a54426"
+content-hash = "e86ca82aea4f9edffec94eee9cd776d5a87024d0efec1a1d7902e1374957a88f"
