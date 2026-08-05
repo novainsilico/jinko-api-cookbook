@@ -8,11 +8,11 @@
       },
       "locked": {
         "dir": "e2e/src",
-        "lastModified": 1769763305,
-        "narHash": "sha256-k8ARTEA06tGg/cvvRycNt6lP7LJDoTqEb4M5ZNO/p/o=",
+        "lastModified": 1785856509,
+        "narHash": "sha256-ycGCpXx5jEyrY+ncWyYBcHjrHGCgTvnuFfVz/rK5Sdk=",
         "ref": "refs/heads/dev",
-        "rev": "cc674ddee94d020d7cf3c24f8ca32328c5421a7c",
-        "revCount": 14057,
+        "rev": "a6dee9c5b4da5dade57f8415ec88377b0a74e03d",
+        "revCount": 15109,
         "type": "git",
         "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/dango.git"
       },
@@ -158,11 +158,11 @@
         "quickjs": "quickjs_2"
       },
       "locked": {
-        "lastModified": 1768996939,
-        "narHash": "sha256-++wCM3kag5MAOth9YgRGfWZ3IMdFnhuzwNJzHktPedM=",
+        "lastModified": 1785416028,
+        "narHash": "sha256-C4G1W2jolp/+CuInQnszSAShTS2oO9bAiMxbwcBQg6I=",
         "ref": "refs/heads/master",
-        "rev": "9ceb22f510b4e8ba804b2a4c3b08c308d9533093",
-        "revCount": 301,
+        "rev": "420f8bdc6b816e9a320a61708028d1e702019d5d",
+        "revCount": 350,
         "type": "git",
         "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/jinko-seeder"
       },
@@ -253,11 +253,11 @@
     },
     "nixpkgs_6": {
       "locked": {
-        "lastModified": 1769461804,
-        "narHash": "sha256-msG8SU5WsBUfVVa/9RPLaymvi5bI8edTavbIq3vRlhI=",
+        "lastModified": 1785828668,
+        "narHash": "sha256-8fsyqeO+mJqvIzeO4xIpgJe/f7MTbbVTEC6RT6WSXNs=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "bfc1b8a4574108ceef22f02bafcf6611380c100d",
+        "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
         "type": "github"
       },
       "original": {
@@ -270,16 +270,16 @@
     "qjsExtLib": {
       "flake": false,
       "locked": {
-        "lastModified": 1765635342,
-        "narHash": "sha256-savd595hI2sECEHiLaeIRHPHglXwA8sVvv+1H5JJHfg=",
+        "lastModified": 1773507097,
+        "narHash": "sha256-w2tSVOx10Pyxh/r5tHamlRwne8tytiFLaP1ZvrumRt8=",
         "owner": "ctn-malone",
         "repo": "qjs-ext-lib",
-        "rev": "002c3d46109c03b19422edcc2f77ec6dcec23ded",
+        "rev": "f7c0cc69b70214da730c7e60c08b22388a721e60",
         "type": "github"
       },
       "original": {
         "owner": "ctn-malone",
-        "ref": "0.17.2",
+        "ref": "0.17.3",
         "repo": "qjs-ext-lib",
         "type": "github"
       }
