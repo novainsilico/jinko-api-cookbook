@@ -158,11 +158,11 @@
         "quickjs": "quickjs_2"
       },
       "locked": {
-        "lastModified": 1785416028,
-        "narHash": "sha256-C4G1W2jolp/+CuInQnszSAShTS2oO9bAiMxbwcBQg6I=",
+        "lastModified": 1790180749,
+        "narHash": "sha256-i2hhxqkCmI7py6O0RQHTFzNOgK/1Fz6wEaq4Nbglqxs=",
         "ref": "refs/heads/master",
-        "rev": "420f8bdc6b816e9a320a61708028d1e702019d5d",
-        "revCount": 350,
+        "rev": "e56cebea95461c449ace0b593467d375eb0f3dd5",
+        "revCount": 362,
         "type": "git",
         "url": "ssh://git@git.novadiscovery.net/jinko/dorayaki/jinko-seeder"
       },

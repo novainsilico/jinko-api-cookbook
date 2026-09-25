@@ -324,6 +324,18 @@ webencodings = "*"
 css = ["tinycss2 (>=1.1.0)"]
 
 [[package]]
+name = "cachetools"
+version = "7.2.0"
+description = "Extensible memoizing collections and decorators"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "cachetools-7.2.0-py3-none-any.whl", hash = "sha256:3045213f186b89fdd95d94441354c4bd87c570b7a38d8c3fd1d9dd37f6dc90d8"},
+    {file = "cachetools-7.2.0.tar.gz", hash = "sha256:bcac1a1b8da6909994a2957238a57b8140dab7c5c5c69a43669654fe87a33c1d"},
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -1620,20 +1632,28 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinko-sdk"
-version = "1.6.1"
+version = "1.12.1"
 description = "Official typed Python SDK for the Jinkō clinical trial simulation platform (jinko.ai) — script models, trials, virtual populations, and results."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "jinko_sdk-1.6.1-py3-none-any.whl", hash = "sha256:709165076c84cc74315ed146a6cf20bef88acb6c99ca825ec6a32a951b68c7e2"},
-    {file = "jinko_sdk-1.6.1.tar.gz", hash = "sha256:294aec2015bda23ca17a25282fe21bb69d5aaffbba729e9eca1ced58a4eaac5a"},
+    {file = "jinko_sdk-1.12.1-py3-none-any.whl", hash = "sha256:bab5d783222301b67d26e50d2776128206c6e5f26d1bfaaaae351f21419fc1e8"},
+    {file = "jinko_sdk-1.12.1.tar.gz", hash = "sha256:c4afb01b4e964866a4b9d62e124c165680813fa0ce4c125f1f5a2023ae2c9f52"},
 ]
 
 [package.dependencies]
+cachetools = ">=7.0.0"
+packaging = ">=24.0"
 pydantic = ">=2.13.4"
 rich = ">=15.0.0"
 typing-extensions = ">=4.4"
+
+[package.extras]
+crabbit = ["cma (>=4.4.0)", "matplotlib (>=3.10.8)", "numpy (>=2.0)", "pandas (>=2.0)", "pyyaml (>=6.0)", "seaborn (>=0.13.0)"]
+nonmem2jinko = ["pandas (>=2.0)", "scipy (>=1.11)"]
+pandas = ["pandas (>=2.0)"]
+pdf = ["pypdfium2 (>=5.7.1,<6)"]
 
 [[package]]
 name = "jiter"
@@ -5421,4 +5441,4 @@ ai-exploration-deps = ["unstructured"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "e86ca82aea4f9edffec94eee9cd776d5a87024d0efec1a1d7902e1374957a88f"
+content-hash = "90e7c0c466bb06cfc54489d2d3011ffda2889e7da5b72516ec79d90752522377"
