@@ -1,3 +1,7 @@
 pandas
 jinko-sdk
 matplotlib
+numpy
+plotly
+scipy
+scikit-learn
