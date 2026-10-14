@@ -1,16 +1,16 @@
 ## Instructions to run the Trial Design Optimization demo using the AD model
 
-  1. Log in Nova Demo
-  2. AD demo trial: https://jinko.ai/tr-4bHo-BMO3
-  3. If not done already, create a Jinko API key for the Demo project https://jinko.ai/project/a9593bfe-0abb-416b-8f93-4654a2b47960 
+  1. Log in to the organization that hosts the Cookbooks project
+  2. AD demo trial: https://jinko.ai/tr-jLhO-tboa (folder `/Cookbooks/Trial design optimization`)
+  3. If not done already, create a Jinko API key for the Cookbooks project https://jinko.ai/project/e0fbb5bb-8929-439a-bad6-9e12d19d9ae4
   4. If not done already, clone the cookbooks repo. The demo should run out of the box on the `main` branch:
 ```
 git clone git@git.novadiscovery.net:jinko/api/jinko-api-cookbook.git
 ```
   5. Edit the “.envrc” file at the root of the repo (or create a new one if it does not exist)
 ```
-export JINKO_API_KEY="<your Jinko API key for the Nova Demo project>"
-export JINKO_PROJECT_ID="a9593bfe-0abb-416b-8f93-4654a2b47960"
+export JINKO_API_KEY="<your Jinko API key for the Cookbooks project>"
+export JINKO_PROJECT_ID="e0fbb5bb-8929-439a-bad6-9e12d19d9ae4"
 export JINKO_BASE_URL="https://api.jinko.ai"
 ```
   6. You may have to run “direnv allow” afterwards 
